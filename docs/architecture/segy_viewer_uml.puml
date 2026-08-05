@@ -1,0 +1,130 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+title Modelo de domínio e acesso a arquivos do SEG-Y Viewer
+
+package "Domain" {
+
+    abstract class SeismicDataset {
+        - name: str
+        + name: str
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicLine2D {
+        - line_number: int | str
+        + line_number: int | str
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicSwath3D {
+        - swath_number: int | str
+        + swath_number: int | str
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicVolume3D {
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicTrace {
+        + index: int
+        + header: SegyTraceHeader
+        + samples: Sequence[float]
+    }
+}
+
+package "Infrastructure" {
+
+    abstract class SeismicFile {
+        - path: Path
+        + path: Path
+        + name: str
+        + exists: bool
+        + format_name: str
+        + trace_count: int
+        + open(): void
+        + close(): void
+    }
+
+    class SegyFile {
+        - dataset: SeismicDataset
+        - handle: Any
+        - text_header: SegyTextHeader
+        - binary_header: SegyBinaryHeader
+        - trace_count: int
+        + format_name: str
+        + is_open: bool
+        + open(): void
+        + close(): void
+        + read_trace(index: int): SeismicTrace
+        + iter_traces(start: int, stop: int): Iterator
+        + __enter__(): SegyFile
+        + __exit__(): void
+    }
+
+    class SegyTextHeader {
+        + cards: tuple[str]
+        + card(number: int): str
+        + __str__(): str
+    }
+
+    class SegyBinaryHeader {
+        + sample_interval_us: int
+        + samples_per_trace: int
+        + sample_format_code: int
+        + measurement_system: int
+        + trace_sorting_code: int
+    }
+
+    class SegyTraceHeader {
+        + trace_sequence_file: int
+        + field_record_number: int
+        + trace_number_field_record: int
+        + source_x: float
+        + source_y: float
+        + receiver_x: float
+        + receiver_y: float
+        + inline: int
+        + crossline: int
+        + offset: float
+    }
+}
+
+SeismicDataset <|-- SeismicLine2D
+SeismicDataset <|-- SeismicSwath3D
+SeismicDataset <|-- SeismicVolume3D
+
+SeismicFile <|-- SegyFile
+
+SegyFile o-- "0..1" SeismicDataset : representa
+SegyFile *-- "1" SegyTextHeader : contém
+SegyFile *-- "1" SegyBinaryHeader : contém
+
+SegyFile ..> SeismicTrace : cria / fornece
+SeismicTrace *-- "1" SegyTraceHeader : contém
+
+note right of SegyFile
+O arquivo SEG-Y representa
+um conjunto de dados sísmicos,
+mas não é o próprio conjunto.
+end note
+
+note bottom of SeismicSwath3D
+Em dados 3D de aquisição,
+normalmente um arquivo SEG-Y
+pode representar um swath.
+end note
+
+note bottom of SeismicLine2D
+Em dados 2D,
+normalmente um arquivo SEG-Y
+pode representar uma linha.
+end note
+
+@enduml

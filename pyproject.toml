@@ -1,0 +1,17 @@
+[project]
+name = "segy-viewer"
+version = "0.1.0"
+requires-python = "3.12"
+
+dependencies = [
+
+]
+
+[project.optional-dependencies]
+dev = [
+
+]
+
+web = [
+
+]
