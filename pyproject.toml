@@ -1,17 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "segy-viewer"
 version = "0.1.0"
-requires-python = "3.12"
-
+description = "Visualizador desktop de arquivos SEG-Y"
+requires-python = ">=3.12,<3.13"
 dependencies = [
-
+    "segyio==1.9.14",
 ]
 
 [project.optional-dependencies]
 dev = [
-
+    "pytest>=8.0",
 ]
 
-web = [
+[tool.setuptools]
+package-dir = {"" = "src"}
 
-]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["segy_viewer*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"

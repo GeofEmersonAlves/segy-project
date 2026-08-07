@@ -40,6 +40,18 @@
         <mxCell id="eftrZ16Da_ytKJvqIDb--22" parent="eftrZ16Da_ytKJvqIDb--1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" value="+ close(): void" vertex="1">
           <mxGeometry height="20" width="140" y="228" as="geometry" />
         </mxCell>
+        <mxCell id="eftrZ16Da_ytKJvqIDb--23" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="SegyTextHeader" vertex="1">
+          <mxGeometry height="104" width="160" x="100" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="eftrZ16Da_ytKJvqIDb--24" parent="eftrZ16Da_ytKJvqIDb--23" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="+ cards: tuple[str]" vertex="1">
+          <mxGeometry height="26" width="160" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="eftrZ16Da_ytKJvqIDb--27" parent="eftrZ16Da_ytKJvqIDb--23" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="+ card(number: int): str" vertex="1">
+          <mxGeometry height="26" width="160" y="52" as="geometry" />
+        </mxCell>
+        <mxCell id="eftrZ16Da_ytKJvqIDb--28" parent="eftrZ16Da_ytKJvqIDb--23" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="__str__(): str" vertex="1">
+          <mxGeometry height="26" width="160" y="78" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
