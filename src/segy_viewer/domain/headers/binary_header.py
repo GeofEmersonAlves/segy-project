@@ -20,17 +20,17 @@ from collections.abc import Iterator, Mapping
 from types import MappingProxyType
 from typing import Any, ClassVar
 
-from binary_header_fields import (
+from .binary_header_fields import (
     BINARY_HEADER_FIELDS,
     BINARY_HEADER_FIELDS_BY_NAME,
     REQUIRED_BINARY_HEADER_FIELDS,
 )
-from byte_order import ByteOrder
+from .byte_order import ByteOrder
 from segy_viewer.domain.exceptions.headers_exceptions import (InvalidHeaderValueError,
                                                                 MissingHeaderFieldError,
                                                                 UnknownHeaderFieldError,
                                                                 UnsupportedSegyRevisionError)
-from header_field import HeaderField, HeaderValue
+from .header_field import HeaderField, HeaderValue
 
 
 class SegyBinaryHeader:

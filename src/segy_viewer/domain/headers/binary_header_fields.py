@@ -15,7 +15,7 @@ Histórico:
        06/08/2026 - Início da implementação da Classe
 ===============================================================================
 """
-from header_field import HeaderDataType, HeaderField
+from .header_field import HeaderDataType, HeaderField
 
 def binary_field(name: str,
                  byte_start: int,

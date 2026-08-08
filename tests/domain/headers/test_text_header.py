@@ -6,7 +6,7 @@ from segy_viewer.domain.exceptions.headers_exceptions import SegyTextHeaderError
 from segy_viewer.domain.headers.text_header import SegyTextHeader
 
 BASE_DIR = Path(__file__).parent.parent
-path_segy_file =  Path("F:/") / "ENTREGA - ANP"  / "SÍSMICA"  / "0328-SW0001.sgy"
+path_segy_file =  Path("H:/") / "ENTREGA - ANP"  / "SÍSMICA"  / "0328-SW0001.sgy"
 path_br = Path("E:/")  / "BGP" / "04 - MEDICAO 4 - SW17-SW01" / "01 - REMESSA 4" / "01-DADOS" / "0328-SW16_BRV06.sgy"
 path_anp = Path("C:/") / "Users" / "Emerson"  / "Documents" / "MBA" / "Cursos Complementares" / "SEGY_File" / "R0254_RIO_UATUMA_3D.3D.POST-STM.1.sgy"
 
@@ -61,3 +61,6 @@ def test_text_header():
         assert len(text_header1.cards) == 40
         assert len(text_header2.cards) == 40
         assert len(text_header3.cards) == 40
+
+if __name__ == "__main__":
+      test_text_header()
