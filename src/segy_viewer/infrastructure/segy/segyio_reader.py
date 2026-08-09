@@ -16,9 +16,13 @@ Histórico:
 ===============================================================================
 """
 import segyio
+import numpy as np
+from collections.abc import Iterator
+from typing import Self
 from pathlib import Path
 from segy_viewer.domain.files.seismic_reader import SeismicReader
-from segy_viewer.domain.headers import ByteOrder, SegyBinaryHeader, SegyTextHeader
+from segy_viewer.domain.headers import ByteOrder, SegyBinaryHeader, SegyTextHeader,SegyTraceHeader
+from segy_viewer.domain.traces.seismic_trace import SeismicTrace
 
 
 class SegyioReader(SeismicReader):
@@ -59,7 +63,7 @@ class SegyioReader(SeismicReader):
         _segy_file = self._require_open()
         return _segy_file.tracecount
 
-    def read_text_reader(self) -> SegyTextHeader:
+    def read_text_header(self) -> SegyTextHeader:
         _segy_file = self._require_open()
         text = bytes(_segy_file.text[0]).decode("ascii")
         cards = tuple(text[i:i + 80] for i in range(0, 3200, 80))
@@ -200,6 +204,40 @@ class SegyioReader(SeismicReader):
             byte_order=ByteOrder.BIG_ENDIAN,
             validate_revision=False,
         )
+    def read_samples(self, index: int) -> np.ndarray:
+        segy_file = self._require_open()
+        return segy_file.trace[index]
+
+
+    def read_trace(self, index: int) -> SeismicTrace:
+        """Lê um traço completo: header + samples."""
+        _segy_file = self._require_open()
+        return SeismicTrace(
+            header=self.read_trace_header(index),
+            samples=self.read_samples(index),
+        )
+
+        raise NotImplementedError
+
+    def read_traces(self, start: int, stop: int) -> list[SeismicTrace]:
+        """Lê vários traços completos: headers + samples."""
+        pass
+
+    def read_trace_header(self, index: int) -> SegyTraceHeader:
+        """Lê somente o header do traço."""
+        # segy_file = self._require_open()
+        pass
+
+    def read_trace_headers(self, start: int, stop: int ) -> list[SegyTraceHeader]:
+        """Lê somente os headers dos traços."""
+        pass
+
+    def iter_traces(self, start: int = 0, stop: int | None = None, ) -> Iterator[SeismicTrace]:
+        if stop is None:
+            stop = self.trace_count
+
+        for index in range(start, stop):
+            yield self.read_trace(index)
 
     def _require_open(self) -> segyio.SegyFile:
         if self._segy_file is None:
@@ -214,23 +252,10 @@ class SegyioReader(SeismicReader):
     # Com esses dois metodos abaixo  posso fazer
     # with SegyioReader(path) as reader:
     #      binary_header = reader.read_binary_header()
-    def __enter__(self) -> "SegyioReader":
+    def __enter__(self) -> Self:
         self.open()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.close()
 
-
-
-    # def iter_traces(
-    #     self,
-    #     start: int = 0,
-    #     stop: int | None = None,
-    # ) -> Iterator["SeismicTrace"]:
-    #
-    #     if stop is None:
-    #         stop = self.trace_count
-    #
-    #     for index in range(start, stop):
-    #         yield self.read_trace(index)
