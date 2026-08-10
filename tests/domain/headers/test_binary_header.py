@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-from segy_viewer.domain.headers import ByteOrder, SegyBinaryHeader
+from segy_viewer.domain.headers import  SegyBinaryHeader
 from segy_viewer.infrastructure.segy import SegyioReader
 
 
@@ -21,9 +21,6 @@ def test_binary_header():
         print(f'Sistema de medida: {binary_header.measurement_system_name}')
 
         assert isinstance(binary_header, SegyBinaryHeader)
-
-
-
 
 
 if __name__ == "__main__":

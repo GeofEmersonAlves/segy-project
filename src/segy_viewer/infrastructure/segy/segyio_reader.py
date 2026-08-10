@@ -13,6 +13,7 @@ Descrição:
 
 Histórico:
        07/08/2026 - Início da implementação da Classe
+       09/08/2026 - Implementação dos metodos read_trace_header, read_trace, read_traces e read_trace_headers
 ===============================================================================
 """
 import segyio
@@ -21,7 +22,8 @@ from collections.abc import Iterator
 from typing import Self
 from pathlib import Path
 from segy_viewer.domain.files.seismic_reader import SeismicReader
-from segy_viewer.domain.headers import ByteOrder, SegyBinaryHeader, SegyTextHeader,SegyTraceHeader
+from segy_viewer.domain.headers import ByteOrder, SegyBinaryHeader, SegyTextHeader, SegyTraceHeader, HeaderDataType
+from segy_viewer.domain.headers.trace_header_fields import TRACE_HEADER_FIELDS
 from segy_viewer.domain.traces.seismic_trace import SeismicTrace
 
 
@@ -60,8 +62,8 @@ class SegyioReader(SeismicReader):
 
     @property
     def trace_count(self) -> int:
-        _segy_file = self._require_open()
-        return _segy_file.tracecount
+        segy_file = self._require_open()
+        return segy_file.tracecount
 
     def read_text_header(self) -> SegyTextHeader:
         _segy_file = self._require_open()
@@ -79,7 +81,6 @@ class SegyioReader(SeismicReader):
             # Bytes 3201-3212
             # Identificação
             # ----------------------------------------------------------
-
             "job_id":
                 binary[segyio.BinField.JobID],
 
@@ -93,7 +94,6 @@ class SegyioReader(SeismicReader):
             # Bytes 3213-3224
             # Traços e amostragem
             # ----------------------------------------------------------
-
             "data_traces_per_ensemble":
                 binary[segyio.BinField.Traces],
 
@@ -116,7 +116,6 @@ class SegyioReader(SeismicReader):
             # Bytes 3225-3232
             # Formato, fold e ordenação
             # ----------------------------------------------------------
-
             "sample_format_code":
                 binary[segyio.BinField.Format],
 
@@ -133,7 +132,6 @@ class SegyioReader(SeismicReader):
             # Bytes 3233-3248
             # Sweep
             # ----------------------------------------------------------
-
             "sweep_frequency_start":
                 binary[segyio.BinField.SweepFrequencyStart],
 
@@ -162,7 +160,6 @@ class SegyioReader(SeismicReader):
             # Bytes 3249-3260
             # Correlação, ganho, amplitude, unidades e polaridade
             # ----------------------------------------------------------
-
             "correlated_data_traces":
                 binary[segyio.BinField.CorrelatedTraces],
 
@@ -185,7 +182,6 @@ class SegyioReader(SeismicReader):
             # Bytes 3501-3506
             # Revisão SEG-Y
             # ----------------------------------------------------------
-
             "revision_major":
                 binary[segyio.BinField.SEGYRevision],
 
@@ -199,38 +195,64 @@ class SegyioReader(SeismicReader):
                 binary[segyio.BinField.ExtendedHeaders],
         }
 
-        return SegyBinaryHeader(
-            values=values,
-            byte_order=ByteOrder.BIG_ENDIAN,
-            validate_revision=False,
-        )
+        return SegyBinaryHeader(values=values, byte_order=ByteOrder.BIG_ENDIAN, validate_revision=False)
+
     def read_samples(self, index: int) -> np.ndarray:
         segy_file = self._require_open()
         return segy_file.trace[index]
 
+    def read_trace_header(self,index: int) -> SegyTraceHeader:
+        """Lê somente o header do traço."""
+        segy_file = self._require_open()
+
+        if not 0 <= index < segy_file.tracecount:
+            raise IndexError(f"Índice de traço fora do intervalo: {index}. "
+                             f"O arquivo possui {segy_file.tracecount} traços.")
+
+        header = segy_file.header[index]
+        values = {}
+
+        for field in TRACE_HEADER_FIELDS:
+            if field.data_type is HeaderDataType.RAW_BYTES:
+                values[field.name] = None
+                continue
+
+            values[field.name] = header[field.byte_start]
+
+        return SegyTraceHeader(values=values, byte_order=ByteOrder.BIG_ENDIAN)
 
     def read_trace(self, index: int) -> SeismicTrace:
         """Lê um traço completo: header + samples."""
-        _segy_file = self._require_open()
-        return SeismicTrace(
-            header=self.read_trace_header(index),
-            samples=self.read_samples(index),
-        )
-
-        raise NotImplementedError
+        return SeismicTrace(index = index,
+                            header=self.read_trace_header(index),
+                            samples=self.read_samples(index))
 
     def read_traces(self, start: int, stop: int) -> list[SeismicTrace]:
         """Lê vários traços completos: headers + samples."""
-        pass
 
-    def read_trace_header(self, index: int) -> SegyTraceHeader:
-        """Lê somente o header do traço."""
-        # segy_file = self._require_open()
-        pass
+        if not 0 <= start < stop <= self.trace_count:
+            raise IndexError(f"Índice de início {start} tem que ser menor que o indice de stop {stop}."
+                             f"Índice de stop fora do intervalo,o arquivo possui {self.trace_count} traços.")
+
+        traces = []
+        for index in range(start, stop):
+            trace = self.read_trace(index)
+            traces.append(trace)
+
+        return traces
 
     def read_trace_headers(self, start: int, stop: int ) -> list[SegyTraceHeader]:
         """Lê somente os headers dos traços."""
-        pass
+
+        if not 0 <= start < stop <= self.trace_count:
+            raise IndexError(f"Índice de início {start} tem que ser menor que o indice de stop {stop}."
+                             f"Índice de stop fora do intervalo,o arquivo possui {self.trace_count} traços.")
+        headers = []
+        for index in range(start, stop):
+            header = self.read_trace_header(index)
+            headers.append(header)
+
+        return headers
 
     def iter_traces(self, start: int = 0, stop: int | None = None, ) -> Iterator[SeismicTrace]:
         if stop is None:

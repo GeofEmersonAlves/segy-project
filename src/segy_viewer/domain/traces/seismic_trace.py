@@ -12,6 +12,7 @@ Descrição:
 
 Histórico:
        08/08/2026 - Início da implementação da Classe
+       09/08/2026 - Inclusão do método to_dict()
 ===============================================================================
 """
 import numpy as np
@@ -65,3 +66,22 @@ class SeismicTrace:
             header=self.header,
             samples=self.samples.copy(),
         )
+
+    def to_dict(self, *, effective_header_values: bool = False, include_none: bool = True) -> dict:
+        """
+        Converte o traço sísmico para um dicionário.
+
+        Parameters
+        ----------
+        effective_header_values:
+            Quando True, utiliza no Trace Header os valores efetivos
+            após aplicação dos escalares.
+
+        include_none:
+            Quando False, remove do Trace Header os campos sem valor.
+        """
+        return {
+                "index": self.index,
+                "traceHeader": self.header.to_dict(effective_values=effective_header_values,include_none=include_none),
+                "samples": self.samples.tolist()
+               }

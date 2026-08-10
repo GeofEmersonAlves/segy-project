@@ -15,6 +15,8 @@ Histórico:
 ===============================================================================
 """
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from segy_viewer.domain.traces.seismic_trace import SeismicTrace
 
 class SeismicReader(ABC):
 
@@ -40,16 +42,16 @@ class SeismicReader(ABC):
         """Fecha o arquivo sísmico."""
         raise NotImplementedError
 
-    # @abstractmethod
-    # def read_trace(self, index: int) -> "SeismicTrace":
-    #     """Lê um traço pelo índice."""
-    #     raise NotImplementedError
+    @abstractmethod
+    def read_trace(self, index: int) -> SeismicTrace:
+        """Lê um traço pelo índice."""
+        raise NotImplementedError
 
-    # @abstractmethod
-    # def iter_traces(
-    #     self,
-    #     start: int = 0,
-    #     stop: int | None = None,
-    # ) -> Iterator["SeismicTrace"]:
-    #     """Percorre os traços de um intervalo."""
-    #     raise NotImplementedError
+    @abstractmethod
+    def iter_traces(
+        self,
+        start: int = 0,
+        stop: int | None = None,
+    ) -> Iterator[SeismicTrace]:
+        """Percorre os traços de um intervalo."""
+        raise NotImplementedError
