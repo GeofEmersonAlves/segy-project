@@ -1,0 +1,40 @@
+C 1 CLIENT PETROBRAS              COMPANY BGP BRASIL            CREW NO 0328    
+C 2 LINE 0328-SW16  AREA PILAR ALAGOAS                                          
+C 3 REEL NO. 000001   DAY-START OF REEL  23 YEAR 2019 OBSERVER JOSUE/TIAGO      
+C 4 INSTRUMENT  MFG SERCEL     MODEL 428XL      SERIAL NO 2405159               
+C 5 DATA TRACES/RECORD 5400   AUXILIARY TRACES/RECORD 2       CDP FOLD 150      
+C 6 SAMPLE INTERVAL 2MS     SAMPLES/TRACE 3501  BITS/IN      BYTES/SAMPLE 4     
+C 7 RECORDING FORMAT SEGD   FORMAT THIS REEL BRV06 MEASUREMENT SYSTEM METRIC    
+C 8 SAMPLE CODE IBM FLOATING POINT                                              
+C 9 GAIN TYPE NONE                                                              
+C10 FILTERS LOW CUT 3HZ-24DB/OCT HIGH CUT 205HZ-580DB/OCT                       
+C11 SOURCE TYPE EXPLOSIVE   NUMBER/POINT 2      POINT INTERVAL 40               
+C12     PATTERN L-2x1                      LENGTH 20     WIDTH 0.1              
+C13 SWEEP START    HZ   END      HZ  LENGTH      MS  CHANNEL NO   TYPE          
+C14 TAPER START LENGTH        MS  END LENGTH       MS  TYPE                     
+C15 SPREAD OFFSET 20      MAX DISTANCE 5380   GROUP INTERVAL 40                 
+C16 GEOPHONES PER GROUP 12   SPACING 3.33FREQUENCY 10HZMFG SERCEL MODEL SG10    
+C17      TYPE LINEAR                       LENGTH 36.63  WIDTH 0.1              
+C18 TRACES SORTED BY FFID/CHANNEL                                               
+C19 AMPLITUDE RECOVERY NONE                                                     
+C20 MAP PROJECTION UTM                  ZONE ID 24S   COORDINATE UNITS METERS   
+C21 PROCESSING: BGP BRASIL DEZEMBRO 2018 - JANEIRO  2019                        
+C22 PROCESSING: BGP EMAIL: LIYONGGQING@BGPINTL.COM                              
+C23 SURVEY: 0328_3D_CAMPO_DE_PILAR                                              
+C24 INTERVAL FFID: 6717-7254 TOTAL OF RECORDS: 415                              
+C25 -PICAGEM DAS PRIMEIRAS QUEBRAS PELO PICO NEGATIVO                           
+C26 -AS COORDENADAS DOS TRACOS DUROS QUE NAO FORAM LEVANTADAS SAO AS DE PREPLOT 
+C27 -DOCUMENTACAO DA LINHA INFORMA ESTACOES SEM GEOFONES E OS PTs NAO FURADOS   
+C28 -DETONACAO VIA RADIO                                                        
+C29 -A QUANTIDADE DE CARGA UTILIZADA EM CADA FURO FOI 2000 GRAMAS               
+C30 -CQ: FRANKLIM, RODRIGO, EMERSON, XU, LIY                                    
+C31                                                                             
+C32                                                                             
+C33                                                                             
+C34                                                                             
+C35                                                                             
+C36 GRID X1 831902.70   Y1 8937440.40  X2 843073.80   Y2 8930186.00             
+C37      X3 835784.40   Y3 8942169.20   IL BINSIZE  20.00  XL BINSIZE 20.00     
+C38                                                                             
+C39                                                                             
+C40 END EBCDIC DATUM SIRGAS-2000          (020) MC -39   PROJ.CODE 001          

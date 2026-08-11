@@ -14,10 +14,13 @@ Descrição:
 Histórico:
        07/08/2026 - Início da implementação da Classe
        09/08/2026 - Implementação dos metodos read_trace_header, read_trace, read_traces e read_trace_headers
+       10/08/2026 - Implementação do metodo read_samples_matrix, pensei neste método pois com uma matrix
+                 será mais fácil e perfomático fazer cálculos com as amostras dos traços
 ===============================================================================
 """
 import segyio
 import numpy as np
+from numpy.typing import NDArray
 from collections.abc import Iterator
 from typing import Self
 from pathlib import Path
@@ -26,9 +29,7 @@ from segy_viewer.domain.headers import ByteOrder, SegyBinaryHeader, SegyTextHead
 from segy_viewer.domain.headers.trace_header_fields import TRACE_HEADER_FIELDS
 from segy_viewer.domain.traces.seismic_trace import SeismicTrace
 
-
 class SegyioReader(SeismicReader):
-
     def __init__(self, path: str | Path) -> None:
         self._path = Path(path)
         self._segy_file: segyio.SegyFile | None = None
@@ -36,6 +37,11 @@ class SegyioReader(SeismicReader):
     @property
     def is_open(self) -> bool:
         return self._segy_file is not None
+
+    @property
+    def trace_count(self) -> int:
+        segy_file = self._require_open()
+        return segy_file.tracecount
 
     def open(self) -> None:
         if self.is_open:
@@ -59,11 +65,6 @@ class SegyioReader(SeismicReader):
 
         self._segy_file.close()
         self._segy_file = None
-
-    @property
-    def trace_count(self) -> int:
-        segy_file = self._require_open()
-        return segy_file.tracecount
 
     def read_text_header(self) -> SegyTextHeader:
         _segy_file = self._require_open()
@@ -197,10 +198,6 @@ class SegyioReader(SeismicReader):
 
         return SegyBinaryHeader(values=values, byte_order=ByteOrder.BIG_ENDIAN, validate_revision=False)
 
-    def read_samples(self, index: int) -> np.ndarray:
-        segy_file = self._require_open()
-        return segy_file.trace[index]
-
     def read_trace_header(self,index: int) -> SegyTraceHeader:
         """Lê somente o header do traço."""
         segy_file = self._require_open()
@@ -221,6 +218,35 @@ class SegyioReader(SeismicReader):
 
         return SegyTraceHeader(values=values, byte_order=ByteOrder.BIG_ENDIAN)
 
+    def read_samples(self, index: int) -> np.ndarray:
+        segy_file = self._require_open()
+        return segy_file.trace[index]
+
+    def read_samples_matrix(self, start: int, stop: int) -> NDArray[np.float32]:
+        """
+        Retorna uma Matrix com as amostras de vários traços.
+        Cada coluna da matriz representa um traço e cada linha representa uma amostra.
+                                        TRAÇOS
+                             100    101    102    103
+                           ┌───────────────────────────
+                amostra 0  │ 1.2    0.9    1.0    1.3
+                amostra 1  │ 1.4    1.1    0.7    1.2
+                amostra 2  │ 0.8    1.5    0.3    0.9
+                amostra 3  │ 0.2    0.6    0.8    1.1
+                   ...     │ ...    ...    ...    ...
+                amostra N  │ ...
+                           └───────────────────────────
+        """
+        if not 0 <= start < stop <= self.trace_count:
+            raise IndexError(
+                             f"Intervalo de traços inválido: [{start}, {stop}). "
+                             f"O arquivo possui {self.trace_count} traços."
+                            )
+
+        traces = [self.read_samples(index) for index in range(start, stop) ]
+
+        return np.column_stack(traces)
+
     def read_trace(self, index: int) -> SeismicTrace:
         """Lê um traço completo: header + samples."""
         return SeismicTrace(index = index,
@@ -231,8 +257,8 @@ class SegyioReader(SeismicReader):
         """Lê vários traços completos: headers + samples."""
 
         if not 0 <= start < stop <= self.trace_count:
-            raise IndexError(f"Índice de início {start} tem que ser menor que o indice de stop {stop}."
-                             f"Índice de stop fora do intervalo,o arquivo possui {self.trace_count} traços.")
+            raise IndexError(f"Intervalo de traços inválido: [{start}, {stop})."
+                             f"O arquivo possui {self.trace_count} traços.")
 
         traces = []
         for index in range(start, stop):
@@ -245,8 +271,8 @@ class SegyioReader(SeismicReader):
         """Lê somente os headers dos traços."""
 
         if not 0 <= start < stop <= self.trace_count:
-            raise IndexError(f"Índice de início {start} tem que ser menor que o indice de stop {stop}."
-                             f"Índice de stop fora do intervalo,o arquivo possui {self.trace_count} traços.")
+            raise IndexError(f"Intervalo de traços inválido: [{start}, {stop})."
+                             f"O arquivo possui {self.trace_count} traços.")
         headers = []
         for index in range(start, stop):
             header = self.read_trace_header(index)

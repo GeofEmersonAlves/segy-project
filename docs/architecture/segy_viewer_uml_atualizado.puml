@@ -1,0 +1,310 @@
+@startuml
+
+title Modelo de domínio e leitura do SEG-Y Viewer — estado atual (10/08/2026)
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 160
+
+' ==========================================================
+' DOMAIN
+' ==========================================================
+package "Domain" {
+
+    package "datasets" {
+        enum SeismicDatasetType {
+            SEISMIC_2D = "2D"
+            SEISMIC_3D = "3D"
+        }
+
+        abstract class SeismicDataset {
+            - _name: str
+            + name: str
+            + dataset_type: SeismicDatasetType
+            + describe(): str
+        }
+
+        class SeismicLine2D {
+            - _line_number: str | int | None
+            + line_number: str | int | None
+            + dataset_type: SeismicDatasetType
+            + describe(): str
+        }
+
+        class SeismicSwath3D {
+            - _swath_number: str | int | None
+            + swath_number: str | int | None
+            + dataset_type: SeismicDatasetType
+            + describe(): str
+        }
+
+        class SeismicVolume3D {
+            + dataset_type: SeismicDatasetType
+            + describe(): str
+        }
+    }
+
+    package "files / ports" {
+        abstract class SeismicFile {
+            - _path: Path
+            + path: Path
+            + name: str
+            + exists: bool
+            + format_name: str
+            + trace_count: int
+            + open(): void
+            + close(): void
+        }
+
+        abstract class SeismicReader {
+            + is_open: bool
+            + trace_count: int
+            + open(): void
+            + close(): void
+            + read_text_header(): SegyTextHeader
+            + read_binary_header(): SegyBinaryHeader
+            + read_trace(index: int): SeismicTrace
+            + iter_traces(start=0, stop=None): Iterator<SeismicTrace>
+        }
+    }
+
+    package "headers" {
+        enum ByteOrder {
+            BIG_ENDIAN
+            LITTLE_ENDIAN
+            UNKNOWN
+            + from_string(value): ByteOrder
+        }
+
+        enum HeaderDataType {
+            INT8
+            UINT8
+            INT16
+            UINT16
+            INT32
+            UINT32
+            INT64
+            UINT64
+            FLOAT32
+            FLOAT64
+            RAW_BYTES
+            + byte_length: int | None
+        }
+
+        class HeaderField <<dataclass frozen>> {
+            + name: str
+            + byte_start: int
+            + byte_end: int
+            + data_type: HeaderDataType
+            + description: str
+            + unit: str | None
+            + required: bool
+            + length: int
+            + relative_offset: int
+            + byte_range: tuple[int, int]
+            + accepts_value(value): bool
+        }
+
+        class SegyTextHeader <<dataclass frozen>> {
+            + cards: tuple[str, ...]
+            {static} + CARD_COUNT: int = 40
+            {static} + CARD_LENGTH: int = 80
+            + card(number: int): str
+            + __str__(): str
+        }
+
+        class SegyBinaryHeader {
+            - _values: Mapping[str, HeaderValue]
+            - _byte_order: ByteOrder
+            + byte_order: ByteOrder
+            + fields: tuple[HeaderField, ...]
+            + values: Mapping[str, HeaderValue]
+            + revision: tuple[int, int]
+            + revision_name: str
+            + sample_interval: float
+            + samples_per_trace: int
+            + sample_format_code: int
+            + measurement_system_name: str
+            + trace_count: int
+            + first_trace_byte_offset: int
+            + get(field_name, default=None): HeaderValue
+            + get_field(field_name): HeaderField
+            + validate_revision(): void
+            + raw_items(): Iterator
+            + to_dict(...): dict
+        }
+
+        class SegyTraceHeader {
+            - _values: Mapping[str, HeaderValue]
+            - _byte_order: ByteOrder
+            + byte_order: ByteOrder
+            + fields: tuple[HeaderField, ...]
+            + values: Mapping[str, HeaderValue]
+            + trace_sequence_file: int
+            + field_record_number: int
+            + trace_number_field_record: int
+            + samples_in_trace: int
+            + sample_interval: int
+            + sample_interval_ms: float
+            + source_receiver_offset: int
+            + source_x: float
+            + source_y: float
+            + group_x: float
+            + group_y: float
+            + ensemble_x: float
+            + ensemble_y: float
+            + inline_number: int
+            + crossline_number: int
+            + shotpoint_number: float
+            + get(field_name, default=None): HeaderValue
+            + get_field(field_name): HeaderField
+            + raw_items(): Iterator
+            + to_dict(...): dict
+        }
+    }
+
+    package "traces" {
+        class SeismicTrace <<dataclass slots>> {
+            + index: int
+            + header: SegyTraceHeader
+            + samples: NDArray[float32]
+            + sample_interval_us: int
+            + sample_count: int
+            + rms: float
+            + maximum_amplitude: float
+            + minimum_amplitude: float
+            + duration_ms: float
+            + copy(): SeismicTrace
+            + to_dict(...): dict
+        }
+    }
+}
+
+' ==========================================================
+' INFRASTRUCTURE
+' ==========================================================
+package "Infrastructure / SEG-Y" {
+    class SegyFile {
+        - _reader: SeismicReader
+        - _dataset: SeismicDataset | None
+        + dataset: SeismicDataset | None
+        + reader: SeismicReader
+        + format_name: str
+        + trace_count: int
+        + text_header: SegyTextHeader
+        + binary_header: SegyBinaryHeader
+        + is_open: bool
+        + open(): void
+        + close(): void
+    }
+
+    class SegyioReader {
+        - _path: Path
+        - _segy_file: segyio.SegyFile | None
+        + is_open: bool
+        + trace_count: int
+        + open(): void
+        + close(): void
+        + read_text_header(): SegyTextHeader
+        + read_binary_header(): SegyBinaryHeader
+        + read_trace_header(index: int): SegyTraceHeader
+        + read_samples(index: int): ndarray
+        + read_samples_matrix(start: int, stop: int): NDArray[float32]
+        + read_trace(index: int): SeismicTrace
+        + read_traces(start: int, stop: int): list[SeismicTrace]
+        + read_trace_headers(start: int, stop: int): list[SegyTraceHeader]
+        + iter_traces(start=0, stop=None): Iterator[SeismicTrace]
+        - _require_open(): segyio.SegyFile
+        + __enter__(): SegyioReader
+        + __exit__(...): void
+    }
+}
+
+package "External libraries" {
+    class "segyio" <<library>>
+    class "numpy" <<library>>
+}
+
+' ==========================================================
+' INHERITANCE / IMPLEMENTATION
+' ==========================================================
+SeismicDataset <|-- SeismicLine2D
+SeismicDataset <|-- SeismicSwath3D
+SeismicDataset <|-- SeismicVolume3D
+SeismicDataset --> SeismicDatasetType : retorna
+
+SeismicFile <|-- SegyFile
+SeismicReader <|-- SegyioReader
+
+' ==========================================================
+' DOMAIN RELATIONSHIPS
+' ==========================================================
+HeaderField --> HeaderDataType : tipo
+SegyBinaryHeader *-- "*" HeaderField : metadados
+SegyBinaryHeader --> ByteOrder
+SegyTraceHeader *-- "*" HeaderField : metadados
+SegyTraceHeader --> ByteOrder
+SeismicTrace *-- "1" SegyTraceHeader : header
+SeismicTrace --> "1" "numpy" : samples
+
+' ==========================================================
+' INFRASTRUCTURE RELATIONSHIPS
+' ==========================================================
+SegyFile *-- "1" SeismicReader : reader
+SegyFile o-- "0..1" SeismicDataset : dataset
+SegyFile ..> SegyTextHeader : expõe
+SegyFile ..> SegyBinaryHeader : expõe
+
+SegyioReader ..> SegyTextHeader : cria
+SegyioReader ..> SegyBinaryHeader : cria
+SegyioReader ..> SegyTraceHeader : cria
+SegyioReader ..> SeismicTrace : cria
+SegyioReader ..> "segyio" : usa
+SegyioReader ..> "numpy" : usa
+
+' ==========================================================
+' NOTES
+' ==========================================================
+note right of SeismicFile
+Abstração de arquivo sísmico.
+No estado atual, pertence ao domínio
+(domain/files), não a Application.
+end note
+
+note right of SeismicReader
+Porta abstrata de leitura.
+Define somente o contrato mínimo
+necessário ao domínio/aplicação.
+end note
+
+note left of SegyFile
+Representa o arquivo SEG-Y.
+Delega acesso aos dados ao reader
+e pode ser associado a um
+SeismicDataset lógico.
+end note
+
+note right of SegyioReader
+Adaptador baseado em segyio.
+Além do contrato de SeismicReader,
+expõe operações especializadas:
+headers isolados, amostras,
+matriz de amostras e leituras em lote.
+end note
+
+note bottom of SeismicTrace
+O traço agora possui explicitamente:
+header + NDArray[float32] de amostras,
+além de métricas derivadas (RMS,
+amplitudes e duração).
+end note
+
+note bottom of HeaderField
+Os campos dos headers foram
+modelados no domínio e são
+independentes da biblioteca segyio.
+end note
+
+@enduml

@@ -11,7 +11,7 @@ path_br = Path("E:/") / "BGP" / "04 - MEDICAO 4 - SW17-SW01" / "01 - REMESSA 4" 
 path_anp = Path("C:/") / "Users" / "Emerson" / "Documents" / "MBA" / "Projetos" / "SEGY_File" / "R0254_RIO_UATUMA_3D.3D.POST-STM.1.sgy"
 
 
-with SegyioReader(path_segy_file) as reader:
+with SegyioReader(path_br) as reader:
     text_header = reader.read_text_header()
     # print(text_header)
     with open("text_header.txt", "w", encoding="utf-8") as fh:

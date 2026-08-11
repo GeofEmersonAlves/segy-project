@@ -8,10 +8,11 @@ Versão     : 1.0
 Python     : Python 3.12.13 | packaged by Anaconda, Inc.
 
 Descrição:
-         Classe abstrata SeimicFile
+         Classe abstrata SeimicFile, representa um arquivo de dados sísmicos
 
 Histórico:
        05/08/2026 - Início da implementação da Classe
+       10/08/2026 - Finalização da implementação da classe
 ===============================================================================
 """
 from abc import ABC, abstractmethod
@@ -36,21 +37,21 @@ class SeismicFile(ABC):
     @property
     @abstractmethod
     def format_name(self) -> str:
-        pass
         """Nome do formato do arquivo."""
+        ...
 
     @property
     @abstractmethod
     def trace_count(self) -> int:
-        pass
         """Quantidade de traços no arquivo."""
+        ...
 
     @abstractmethod
     def open(self) -> None:
-        pass
         """Abre o arquivo."""
+        ...
 
     @abstractmethod
     def close(self) -> None:
-        pass
         """Fecha o arquivo."""
+        ...
