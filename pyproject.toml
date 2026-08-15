@@ -9,11 +9,14 @@ description = "Visualizador desktop de arquivos SEG-Y"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "segyio==1.9.14",
+    "pyside6==6.11.1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
+    "pytest>=9.1.1",
+
+
 ]
 
 [tool.setuptools]

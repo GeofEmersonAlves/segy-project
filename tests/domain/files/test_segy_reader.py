@@ -29,6 +29,7 @@ def faz_reader(path: Path):
         result = traco1.to_dict()
         print(result)
 
+        type
         assert isinstance(traco1, SeismicTrace)
         traco1_trace_header = traco1.header
 

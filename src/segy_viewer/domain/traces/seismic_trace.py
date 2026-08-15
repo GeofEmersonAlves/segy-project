@@ -18,7 +18,6 @@ Histórico:
 import numpy as np
 from numpy.typing import NDArray
 from dataclasses import dataclass
-from typing import Self
 from segy_viewer.domain.headers.trace_header import SegyTraceHeader
 
 @dataclass(slots=True)

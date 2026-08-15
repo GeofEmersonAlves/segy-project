@@ -1,0 +1,282 @@
+@startuml
+
+title Modelo de domínio e leitura do SEG-Y Viewer
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ==========================================================
+' DOMAIN
+' ==========================================================
+
+package "Domain" {
+
+    abstract class SeismicDataset {
+        - _name: str
+
+        + name: str
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicLine2D {
+        - _line_number: int | str
+
+        + line_number: int | str
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicSwath3D {
+        - _swath_number: int | str
+
+        + swath_number: int | str
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicVolume3D {
+        + dataset_type: str
+        + describe(): str
+    }
+
+    class SeismicTrace {
+        + index: int
+        + samples: Sequence[float]
+    }
+
+    class SegyTraceHeader {
+        + trace_sequence_file: int
+        + field_record_number: int | None
+        + trace_number_field_record: int | None
+
+        + source_x: float | None
+        + source_y: float | None
+        + receiver_x: float | None
+        + receiver_y: float | None
+
+        + inline: int | None
+        + crossline: int | None
+        + offset: float | None
+    }
+}
+
+
+' ==========================================================
+' APPLICATION / PORTS
+' ==========================================================
+
+package "Application / Ports" {
+
+    abstract class SeismicFile {
+        - _path: Path
+
+        + path: Path
+        + name: str
+        + exists: bool
+        + format_name: str
+        + trace_count: int
+        + is_open: bool
+
+        + open(): void
+        + close(): void
+        + read_trace(index: int): SeismicTrace
+    }
+
+    interface SeismicReader {
+        + is_open: bool
+        + trace_count: int
+
+        + open(): void
+        + close(): void
+
+        + read_text_header(): SegyTextHeader
+        + read_binary_header(): SegyBinaryHeader
+        + read_trace(index: int): SeismicTrace
+        + iter_traces(start: int, stop: int): Iterator<SeismicTrace>
+    }
+}
+
+
+' ==========================================================
+' INFRASTRUCTURE
+' ==========================================================
+
+package "Infrastructure / SEG-Y" {
+
+    class SegyFile {
+        - _dataset: SeismicDataset | None
+        - _reader: SeismicReader
+
+        + format_name: str
+        + dataset: SeismicDataset | None
+        + trace_count: int
+        + is_open: bool
+
+        + text_header: SegyTextHeader
+        + binary_header: SegyBinaryHeader
+
+        + open(): void
+        + close(): void
+
+        + read_trace(index: int): SeismicTrace
+        + iter_traces(start: int, stop: int): Iterator<SeismicTrace>
+
+        + __enter__(): SegyFile
+        + __exit__(exc_type, exc, traceback): void
+    }
+
+    class SegyioReader {
+        - _path: Path
+        - _handle: Any
+        - _text_header: SegyTextHeader | None
+        - _binary_header: SegyBinaryHeader | None
+
+        + is_open: bool
+        + trace_count: int
+
+        + open(): void
+        + close(): void
+
+        + read_text_header(): SegyTextHeader
+        + read_binary_header(): SegyBinaryHeader
+        + read_trace(index: int): SeismicTrace
+        + iter_traces(start: int, stop: int): Iterator<SeismicTrace>
+
+        - _validate_trace_index(index: int): void
+        - _convert_text_header(raw_header): SegyTextHeader
+        - _convert_binary_header(raw_header): SegyBinaryHeader
+        - _convert_trace_header(index: int): SegyTraceHeader
+    }
+
+    class SegyTextHeader {
+        + cards: tuple[str, ...]
+
+        + card(number: int): str
+        + __str__(): str
+    }
+
+    class SegyBinaryHeader {
+        + sample_interval_us: int
+        + samples_per_trace: int
+        + sample_format_code: int
+        + measurement_system: int | None
+        + trace_sorting_code: int | None
+    }
+}
+
+
+' ==========================================================
+' EXTERNAL LIBRARY
+' ==========================================================
+
+package "External Library" {
+
+    class "segyio" <<library>> {
+        + open(path, mode, ignore_geometry)
+        + TraceField
+        + BinField
+    }
+}
+
+
+' ==========================================================
+' INHERITANCE
+' ==========================================================
+
+SeismicDataset <|-- SeismicLine2D
+SeismicDataset <|-- SeismicSwath3D
+SeismicDataset <|-- SeismicVolume3D
+
+SeismicFile <|-- SegyFile
+
+SeismicReader <|.. SegyioReader
+
+
+' ==========================================================
+' COMPOSITION AND ASSOCIATIONS
+' ==========================================================
+
+SegyFile *-- "1" SeismicReader : utiliza
+SegyFile o-- "0..1" SeismicDataset : representa
+
+SegyioReader *-- "0..1" SegyTextHeader : mantém
+SegyioReader *-- "0..1" SegyBinaryHeader : mantém
+
+SeismicTrace *-- "1" SegyTraceHeader : possui
+
+SegyFile ..> SegyTextHeader : fornece
+SegyFile ..> SegyBinaryHeader : fornece
+SegyFile ..> SeismicTrace : fornece
+
+SegyioReader ..> SeismicTrace : cria
+SegyioReader ..> SegyTraceHeader : cria
+
+SegyioReader ..> "segyio" : usa
+
+
+' ==========================================================
+' NOTES
+' ==========================================================
+
+note right of SeismicFile
+Define o contrato de qualquer
+arquivo sísmico suportado
+pela aplicação.
+end note
+
+note right of SegyFile
+Representa o arquivo SEG-Y.
+
+Não conhece detalhes da
+biblioteca segyio.
+
+Delega a leitura para um
+objeto SeismicReader.
+end note
+
+note right of SeismicReader
+Porta de leitura.
+
+Define as operações necessárias
+para acessar dados sísmicos,
+independentemente da biblioteca
+utilizada.
+end note
+
+note right of SegyioReader
+Adaptador de infraestrutura.
+
+É a única classe que conhece
+diretamente a API da biblioteca
+segyio.
+end note
+
+note bottom of SeismicSwath3D
+Em dados 3D de aquisição,
+um arquivo SEG-Y frequentemente
+representa um swath.
+end note
+
+note bottom of SeismicLine2D
+Em dados 2D,
+um arquivo SEG-Y frequentemente
+representa uma linha sísmica.
+end note
+
+note bottom of SegyFile
+Exemplos de composição:
+
+SegyFile
+    + SegyioReader
+
+SegyFile
+    + FakeSeismicReader
+
+SegyFile
+    + FutureSegyReader
+end note
+
+@enduml

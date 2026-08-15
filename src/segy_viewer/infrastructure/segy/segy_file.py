@@ -9,6 +9,7 @@ Python     : Python 3.12.13 | packaged by Anaconda, Inc.
 
 Descrição:
          Classe  SegyFile, representa um arquivo SEGY de dados sísmicos
+         Se não for designado um SeismicReader na criação da classe, por padrão ela assume o SegyioReader.
 
 SegyFile
    │
@@ -18,6 +19,7 @@ SegyFile
    │      ├── trace_count
    │      ├── text_header
    │      └── binary_header
+
    │
    └── reader
           │
@@ -38,12 +40,13 @@ from segy_viewer.domain.datasets import SeismicDataset
 from segy_viewer.domain.headers import SegyTextHeader, SegyBinaryHeader
 from segy_viewer.infrastructure.segy import SegyioReader
 
-
 class SegyFile(SeismicFile):
-    def __init__(self, path: str, reader: SeismicReader | None = SegyioReader ):
+    def __init__(self, path: str, dataset: SeismicDataset | None = None, reader: SeismicReader | None = None ) -> None:
         super().__init__(path)
-        self._reader = reader
-        self._dataset = None
+
+        self._reader = SegyioReader(path)  if reader is None else reader
+
+        self._dataset = dataset
 
     @property
     def dataset(self) -> SeismicDataset | None:
@@ -54,7 +57,7 @@ class SegyFile(SeismicFile):
         self._dataset = dataset
 
     @property
-    def reader(self) -> SeismicReader | None:
+    def reader(self) -> SeismicReader:
         return self._reader
 
     @reader.setter

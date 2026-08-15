@@ -226,16 +226,16 @@ class SegyioReader(SeismicReader):
         """
         Retorna uma Matrix com as amostras de vários traços.
         Cada coluna da matriz representa um traço e cada linha representa uma amostra.
-                                        TRAÇOS
-                             100    101    102    103
-                           ┌───────────────────────────
-                amostra 0  │ 1.2    0.9    1.0    1.3
-                amostra 1  │ 1.4    1.1    0.7    1.2
-                amostra 2  │ 0.8    1.5    0.3    0.9
-                amostra 3  │ 0.2    0.6    0.8    1.1
-                   ...     │ ...    ...    ...    ...
-                amostra N  │ ...
-                           └───────────────────────────
+                                TRAÇOS
+                     100    101    102    103
+                   ┌───────────────────────────
+        amostra 0  │ 1.2    0.9    1.0    1.3
+        amostra 1  │ 1.4    1.1    0.7    1.2
+        amostra 2  │ 0.8    1.5    0.3    0.9
+        amostra 3  │ 0.2    0.6    0.8    1.1
+           ...     │ ...    ...    ...    ...
+        amostra N  │ ...
+                   └───────────────────────────
         """
         if not 0 <= start < stop <= self.trace_count:
             raise IndexError(
