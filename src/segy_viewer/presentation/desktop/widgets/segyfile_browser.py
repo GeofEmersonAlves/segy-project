@@ -16,10 +16,11 @@ Descrição:
     ├── exibe somente *.sgy e *.segy
     ├── reconhece arquivos SEG-Y
     ├── usa ícone próprio para SEG-Y
+    ├── persiste a última pasta visitada
     └── emite seleção de um SEG-Y
 
 Histórico:
-       14/08/2026 - Início da implementação da Classe
+       14/08/2026 - Implementação da Classe
 ===============================================================================
 """
 from PySide6.QtWidgets import (QWidget, QTreeView, QFileSystemModel,
@@ -30,6 +31,16 @@ from PySide6.QtCore import (QFileInfo, QDir, Slot,  QSettings, Signal,
                             QItemSelection, QStandardPaths, QSize, Qt)
 from PySide6.QtGui import QIcon
 from pathlib import Path
+
+_BASE_DIR = Path(__file__).resolve().parents[5]
+_ICONS_DIR = _BASE_DIR / "resources" / "icons"
+_SEGY_ICON = _ICONS_DIR / "segyFile.ico"
+_ICON_UP_BUTTON = _ICONS_DIR / "folder_up.ico"
+_ICON_OPEN_FOLDER = _ICONS_DIR / "open_folder.ico"
+_ICON_SORT_BUTTON1 = _ICONS_DIR / "sort_AZ.ico"
+_ICON_SORT_BUTTON2 = _ICONS_DIR / "sort_019.ico"
+_ICON_REFRESH_BUTTON = _ICONS_DIR / "reload_folder.ico"
+
 
 #==================================================
 class _SegyFileIconProvider(QFileIconProvider):
@@ -50,13 +61,7 @@ class _SegyFileIconProvider(QFileIconProvider):
 
 #==================================================
 class SegyFileBrowser(QWidget):
-    _BASE_DIR = Path(__file__).resolve().parents[5]
-    _ICONS_DIR = _BASE_DIR / "resources" / "icons"
-    _SEGY_ICON =  _ICONS_DIR / "segyFile.ico"
-    _ICON_UP_BUTTON =  _ICONS_DIR / "folder_up.ico"
-    _ICON_OPEN_FOLDER =  _ICONS_DIR / "open_folder.ico"
-    _ICON_SORT_BUTTON =  _ICONS_DIR / "sort_AZ.ico"
-    _ICON_REFRESH_BUTTON =  _ICONS_DIR / "reload_folder.ico"
+
 
     file_selected = Signal(Path)
 
@@ -77,7 +82,7 @@ class SegyFileBrowser(QWidget):
         self.model.setNameFilters(name_filters)
         self.model.setNameFilterDisables(False)
 
-        self.icon_sgyfile = _SegyFileIconProvider(segy_icon = self._SEGY_ICON,
+        self.icon_sgyfile = _SegyFileIconProvider(segy_icon = _SEGY_ICON,
                                                    segy_extensions=self._segy_extensions)
 
         self.model.setIconProvider(self.icon_sgyfile)
@@ -109,21 +114,26 @@ class SegyFileBrowser(QWidget):
         #Botões para navegação do SegyFileBrowser
         buttons_layout = QHBoxLayout()
 
-        self.up_button = self._make_button("", self._ICON_UP_BUTTON, "Go to previous directory")
+        self.up_button = self._make_button("", _ICON_UP_BUTTON, "Go to previous directory")
         self.up_button.clicked.connect(self._button_level_up_clicked)
 
-        self.open_folder_button = self._make_button("", self._ICON_OPEN_FOLDER, "Open other directory")
+        self.open_folder_button = self._make_button("", _ICON_OPEN_FOLDER, "Open other directory")
         self.open_folder_button.clicked.connect(self._button_open_folder_clicked)
 
-        self.sort_button = self._make_button("", self._ICON_SORT_BUTTON, "Change sort order")
-        self.sort_button.clicked.connect(self._button_sort_clicked)
+        self.sort_button1 = self._make_button("", _ICON_SORT_BUTTON1, "Change file name sort order")
+        self.sort_button1.clicked.connect(self._button_sort_name_clicked)
 
-        self.refresh_button = self._make_button("", self._ICON_REFRESH_BUTTON, "Refresh list")
+        self.sort_button2 = self._make_button("", _ICON_SORT_BUTTON2, "Change file size sort order")
+        self.sort_button2.clicked.connect(self._button_sort_size_clicked)
+
+
+        self.refresh_button = self._make_button("", _ICON_REFRESH_BUTTON, "Refresh list")
         self.refresh_button.clicked.connect(self._refresh_current_directory)
 
         buttons_layout.addWidget(self.up_button)
         buttons_layout.addWidget(self.open_folder_button)
-        buttons_layout.addWidget(self.sort_button)
+        buttons_layout.addWidget(self.sort_button1)
+        buttons_layout.addWidget(self.sort_button2)
         buttons_layout.addWidget(self.refresh_button)
         buttons_layout.addStretch()
 
@@ -161,7 +171,7 @@ class SegyFileBrowser(QWidget):
             self._set_current_diretory(Path(path))
 
     @Slot()
-    def _button_sort_clicked(self):
+    def _button_sort_name_clicked(self):
         current_order = self.tree.header().sortIndicatorOrder()
 
         if current_order == Qt.SortOrder.AscendingOrder:
@@ -170,6 +180,17 @@ class SegyFileBrowser(QWidget):
             new_order = Qt.SortOrder.AscendingOrder
 
         self.tree.sortByColumn(0, new_order)
+
+    @Slot()
+    def _button_sort_size_clicked(self):
+        current_order = self.tree.header().sortIndicatorOrder()
+
+        if current_order == Qt.SortOrder.AscendingOrder:
+            new_order = Qt.SortOrder.DescendingOrder
+        else:
+            new_order = Qt.SortOrder.AscendingOrder
+
+        self.tree.sortByColumn(1, new_order)
 
     @Slot()
     def _refresh_current_directory(self) -> None:
@@ -221,7 +242,7 @@ class SegyFileBrowser(QWidget):
     def _make_button(self, text_button: str, path_icon: Path, tooltip_text: str ) -> QPushButton:
         btn = QPushButton(text_button)
         btn.setIcon(QIcon(str(path_icon)))
-        btn.setIconSize(QSize(20, 20))
+        btn.setIconSize(QSize(25, 25))
         btn.setToolTip(tooltip_text)
         btn.setStyleSheet(self._button_style)
 
