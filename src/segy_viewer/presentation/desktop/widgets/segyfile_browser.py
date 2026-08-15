@@ -26,7 +26,7 @@ Histórico:
 from PySide6.QtWidgets import (QWidget, QTreeView, QFileSystemModel,
                                QVBoxLayout, QFileIconProvider, QHBoxLayout,
                                QHeaderView, QAbstractItemView, QPushButton,
-                               QFileDialog, QLabel)
+                               QFileDialog, QLabel, QComboBox, QSizePolicy)
 from PySide6.QtCore import (QFileInfo, QDir, Slot,  QSettings, Signal,
                             QItemSelection, QStandardPaths, QSize, Qt)
 from PySide6.QtGui import QIcon
@@ -41,7 +41,6 @@ _ICON_SORT_BUTTON1 = _ICONS_DIR / "sort_AZ.ico"
 _ICON_SORT_BUTTON2 = _ICONS_DIR / "sort_019.ico"
 _ICON_REFRESH_BUTTON = _ICONS_DIR / "reload_folder.ico"
 
-
 #==================================================
 class _SegyFileIconProvider(QFileIconProvider):
     def __init__(self, segy_icon: Path, segy_extensions: tuple[str, ...]):
@@ -50,11 +49,11 @@ class _SegyFileIconProvider(QFileIconProvider):
         self._segy_extensions = segy_extensions
 
     def icon(self, info: QFileInfo) -> QIcon:
-        if info.isFile():
-            suffix = f".{info.suffix()}".lower()
-
-            if suffix in self._segy_extensions:
-                return self._segy_icon
+        if isinstance(info, QFileInfo):
+            if info.isFile():
+                suffix = f".{info.suffix()}".lower()
+                if suffix in self._segy_extensions:
+                    return self._segy_icon
 
         return super().icon(info)
 
@@ -82,10 +81,10 @@ class SegyFileBrowser(QWidget):
         self.model.setNameFilters(name_filters)
         self.model.setNameFilterDisables(False)
 
-        self.icon_sgyfile = _SegyFileIconProvider(segy_icon = _SEGY_ICON,
+        self._icon_sgyfile = _SegyFileIconProvider(segy_icon = _SEGY_ICON,
                                                    segy_extensions=self._segy_extensions)
 
-        self.model.setIconProvider(self.icon_sgyfile)
+        self.model.setIconProvider(self._icon_sgyfile)
 
         self.tree = QTreeView(self)
         self.tree.setModel(self.model)
@@ -163,9 +162,22 @@ class SegyFileBrowser(QWidget):
 
     @Slot()
     def _button_open_folder_clicked(self):
-        path = QFileDialog.getExistingDirectory(self,"Selecionar pasta")
+        dialog = QFileDialog(self, "Selecionar pasta")
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, False)
+        dialog.setOption(QFileDialog.Option.DontUseNativeDialog,True)
+        current_index = self.tree.rootIndex()
+        current_path = Path(self.model.filePath(current_index))
+        dialog.setDirectory(str(current_path))
 
-        if len(path)>0:
+        # Mostrar apenas arquivos SEG-Y
+        filter_str = f'Arquivos SEG-Y {self._segy_extensions}'.replace('.','*.').replace("'","").replace(",","")
+        dialog.setNameFilter(filter_str)
+        # Ícone personalizado
+        dialog.setIconProvider(self._icon_sgyfile)
+
+        if dialog.exec():
+            path = dialog.selectedFiles()[0]
             index = self.model.index(path)
             self.tree.setRootIndex(index)
             self._set_current_diretory(Path(path))
