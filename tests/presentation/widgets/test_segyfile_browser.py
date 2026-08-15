@@ -10,9 +10,10 @@ def _on_segy_file_selected(path: Path):
 if __name__ == "__main__":
     config = AppConfig()
     segy_extensions = config.segy_extensions
+    button_style = config.button_style
     app = QApplication(sys.argv)
 
-    browser = SegyFileBrowser(segy_extensions)
+    browser = SegyFileBrowser(segy_extensions, button_style)
     browser.file_selected.connect(_on_segy_file_selected)
     browser.show()
 

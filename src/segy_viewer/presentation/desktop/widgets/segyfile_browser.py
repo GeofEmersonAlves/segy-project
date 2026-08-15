@@ -60,11 +60,11 @@ class SegyFileBrowser(QWidget):
 
     file_selected = Signal(Path)
 
-    def __init__(self, segy_extensions: tuple[str, ...], parent=None):
+    def __init__(self, segy_extensions: tuple[str, ...], button_style: str, parent=None):
         super().__init__(parent)
 
         self._settings = QSettings("SegyViewer", "SegyViewer")
-
+        self._button_style = button_style
         self._segy_extensions = segy_extensions
         self.model = QFileSystemModel(self)
 
@@ -109,16 +109,16 @@ class SegyFileBrowser(QWidget):
         #Botões para navegação do SegyFileBrowser
         buttons_layout = QHBoxLayout()
 
-        self.up_button = self._make_button("", self._ICON_UP_BUTTON, "Level Up")
+        self.up_button = self._make_button("", self._ICON_UP_BUTTON, "Go to previous directory")
         self.up_button.clicked.connect(self._button_level_up_clicked)
 
-        self.open_folder_button = self._make_button("", self._ICON_OPEN_FOLDER, "Open Folder")
+        self.open_folder_button = self._make_button("", self._ICON_OPEN_FOLDER, "Open other directory")
         self.open_folder_button.clicked.connect(self._button_open_folder_clicked)
 
-        self.sort_button = self._make_button("", self._ICON_SORT_BUTTON, "Sort")
+        self.sort_button = self._make_button("", self._ICON_SORT_BUTTON, "Change sort order")
         self.sort_button.clicked.connect(self._button_sort_clicked)
 
-        self.refresh_button = self._make_button("", self._ICON_REFRESH_BUTTON, "Refresh")
+        self.refresh_button = self._make_button("", self._ICON_REFRESH_BUTTON, "Refresh list")
         self.refresh_button.clicked.connect(self._refresh_current_directory)
 
         buttons_layout.addWidget(self.up_button)
@@ -154,9 +154,11 @@ class SegyFileBrowser(QWidget):
     @Slot()
     def _button_open_folder_clicked(self):
         path = QFileDialog.getExistingDirectory(self,"Selecionar pasta")
-        index = self.model.index(path)
-        self.tree.setRootIndex(index)
-        self._set_current_diretory(Path(path))
+
+        if len(path)>0:
+            index = self.model.index(path)
+            self.tree.setRootIndex(index)
+            self._set_current_diretory(Path(path))
 
     @Slot()
     def _button_sort_clicked(self):
@@ -221,6 +223,7 @@ class SegyFileBrowser(QWidget):
         btn.setIcon(QIcon(str(path_icon)))
         btn.setIconSize(QSize(20, 20))
         btn.setToolTip(tooltip_text)
+        btn.setStyleSheet(self._button_style)
 
         return btn
 

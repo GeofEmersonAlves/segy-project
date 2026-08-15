@@ -32,6 +32,23 @@ class AppConfig:
 
     segy_extensions: tuple[str, ...] = (".sgy", ".segy") #Extensões SEG-Y reconhecidas
     default_trace_block_size: int = 500  # Tamanho inicial da janela, ainda precisa ajustar,
+    button_style = """
+                        QPushButton {
+                            border: 1px solid #cfcfcf;
+                            border-radius: 4px;
+                            background-color: #f5f5f5;
+                            padding: 3px;
+                        }
+                    
+                        QPushButton:hover {
+                            background-color: #e3e3e3;
+                            border: 1px solid #a9a9a9;
+                        }
+                    
+                        QPushButton:pressed {
+                            background-color: #d0d0d0;
+                        }
+                    """
 
     # -quantidade inicial de traces para visualização
     # -diretório de logs
