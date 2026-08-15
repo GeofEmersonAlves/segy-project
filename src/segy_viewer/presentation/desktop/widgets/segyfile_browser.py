@@ -61,8 +61,8 @@ class _SegyFileIconProvider(QFileIconProvider):
 #==================================================
 class SegyFileBrowser(QWidget):
 
-
-    file_selected = Signal(Path)
+    file_selected = Signal(Path)  #Signal emitido quando o usuário clica em um arquivo
+    path_changed = Signal(Path)   #Signal emitido quando o usuário muda a pasta
 
     def __init__(self, segy_extensions: tuple[str, ...], button_style: str, parent=None):
         super().__init__(parent)
@@ -170,8 +170,9 @@ class SegyFileBrowser(QWidget):
         current_path = Path(self.model.filePath(current_index))
         dialog.setDirectory(str(current_path))
 
-        # Mostrar apenas arquivos SEG-Y
+        # Mostrar apenas arquivos SEG-Y e Todos os arquivos
         filter_str = f'Arquivos SEG-Y {self._segy_extensions}'.replace('.','*.').replace("'","").replace(",","")
+        filter_str += ";;Todos os arquivos (*.*)"
         dialog.setNameFilter(filter_str)
         # Ícone personalizado
         dialog.setIconProvider(self._icon_sgyfile)
@@ -263,3 +264,4 @@ class SegyFileBrowser(QWidget):
     def _set_current_diretory(self, path:Path) -> None:
         self._settings.setValue("file_browser/last_directory", str(path))
         self.path_label.setText(str(path))
+        self.path_changed.emit(path)

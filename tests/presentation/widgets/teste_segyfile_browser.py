@@ -7,6 +7,9 @@ from segy_viewer import AppConfig
 def _on_segy_file_selected(path: Path):
     print(path)
 
+def _on_path_changed(path: Path):
+    print(f'Diretório alterado: {path}')
+
 if __name__ == "__main__":
     config = AppConfig()
     segy_extensions = config.segy_extensions
@@ -15,6 +18,7 @@ if __name__ == "__main__":
 
     browser = SegyFileBrowser(segy_extensions, button_style)
     browser.file_selected.connect(_on_segy_file_selected)
+    browser.path_changed.connect(_on_path_changed)
     browser.show()
 
     sys.exit(app.exec())
