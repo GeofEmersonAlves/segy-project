@@ -1,0 +1,26 @@
+FILE
+--------------------------------------------------
+File name       : 0328-SW0006.sgy
+File size       : 18.7 GB
+Path            : H:\ENTREGA - ANP\...
+
+SEG-Y
+--------------------------------------------------
+Revision        : SEG-Y Rev 1
+Byte order      : Big Endian
+Text encoding   : EBCDIC
+Sample format   : IBM Float (32 bit)
+
+DATA
+--------------------------------------------------
+Traces          : 2,106,688
+Samples / trace : 3,000
+Sample interval : 2,000 us
+Record length   : 6,000 ms
+
+TRACE RANGE
+--------------------------------------------------
+                 First Trace     Last Trace
+SP               30245268        30215484
+CDP              3370082         1160033
+FFID             38617           40458

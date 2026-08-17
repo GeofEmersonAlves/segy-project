@@ -2,7 +2,7 @@
 """
 ===============================================================================
 Projeto    : segy-project
-Arquivo    : segyfile_browser.py
+Arquivo    : segyFile_browser.py
 Autor      : Emerson Alves da Silva
 Versão     : 1.0
 Python     : Python 3.12.13 | packaged by Anaconda, Inc.
@@ -147,6 +147,28 @@ class SegyFileBrowser(QWidget):
 
 
 #========================================================================================================
+    #Método publico para expor a funcionalidade de selecionar um diretório
+    def open_folder_dialog(self):
+        """
+            Mostra a caixa de dialogo para selecionar uma pasta
+        """
+        self._button_open_folder_clicked()
+
+
+    #Método publico que permite alterar o path que esta sendo exibido
+    def change_path(self, path: Path):
+        """
+            Permite alterar o caminho que esta sendo exibibo no SeyFileBrowser
+        :param path:
+        """
+        path_index = self.model.index(str(path))
+        self.tree.setRootIndex(path_index)
+        # self.model.setRootPath(str(path))
+        self._set_current_diretory(path)
+
+
+
+    # ========================================================================================================
     @Slot()
     def _button_level_up_clicked(self):
         current_index = self.tree.rootIndex()
@@ -255,8 +277,9 @@ class SegyFileBrowser(QWidget):
     def _make_button(self, text_button: str, path_icon: Path, tooltip_text: str ) -> QPushButton:
         btn = QPushButton(text_button)
         btn.setIcon(QIcon(str(path_icon)))
-        btn.setIconSize(QSize(25, 25))
+        btn.setIconSize(QSize(34, 25))
         btn.setToolTip(tooltip_text)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setStyleSheet(self._button_style)
 
         return btn

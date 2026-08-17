@@ -18,10 +18,27 @@ Histórico:
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import TypeAlias
+from typing import TypeAlias, TypedDict
 from segy_viewer.domain.exceptions.headers_exceptions import InvalidHeaderFieldError
 
 HeaderValue: TypeAlias = int | float | str | bool | bytes | None
+
+class HeaderFieldDict(TypedDict):
+    name: str
+    byte_start: int
+    byte_end: int
+    data_type: str
+    description: str
+    unit: str | None
+    required: bool
+
+
+class HeaderItemDict(TypedDict):
+    value: HeaderValue
+    header_field: HeaderFieldDict
+
+
+HeaderDict: TypeAlias = dict[str, HeaderItemDict]
 
 class HeaderDataType(Enum):
     """
@@ -197,3 +214,14 @@ class HeaderField:
             return isinstance(value, bytes)
 
         return False
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "byte_start": self.byte_start,
+            "byte_end": self.byte_end,
+            "data_type": self.data_type.value,
+            "description": self.description,
+            "unit": self.unit,
+            "required": self.required,
+        }

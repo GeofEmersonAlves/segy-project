@@ -1,3 +1,3 @@
-from .segyfile_browser import SegyFileBrowser
+from .segyFile_browser import SegyFileBrowser
 
 __all__ = ['SegyFileBrowser']

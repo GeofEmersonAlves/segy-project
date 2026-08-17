@@ -306,48 +306,33 @@ class SegyBinaryHeader:
         for field in BINARY_HEADER_FIELDS:
             yield field, self._values[field.name]
 
-    def to_dict(self, *, effective_values: bool = False, include_none: bool = True) -> dict[str, HeaderValue]:
-        """
-        Converte o header para um novo dicionário.
-
-        Parameters
-        ----------
-        effective_values:
-            Substitui os campos históricos pelos valores efetivos,
-            considerando seus equivalentes estendidos.
-
-        include_none:
-            Inclui ou remove campos sem valor.
-        """
-        result = dict(self._values)
+    def to_dict(self, *, effective_values: bool = False, include_none: bool = True) -> dict[str, dict[str, Any]]:
+        values = dict(self._values)
 
         if effective_values:
-            result.update(
+            values.update(
                 {
                     "sample_interval": self.sample_interval,
-                    "original_sample_interval": (
-                        self.original_sample_interval
-                    ),
+                    "original_sample_interval": self.original_sample_interval,
                     "samples_per_trace": self.samples_per_trace,
-                    "original_samples_per_trace": (
-                        self.original_samples_per_trace
-                    ),
-                    "data_traces_per_ensemble": (
-                        self.data_traces_per_ensemble
-                    ),
-                    "auxiliary_traces_per_ensemble": (
-                        self.auxiliary_traces_per_ensemble
-                    ),
+                    "original_samples_per_trace": self.original_samples_per_trace,
+                    "data_traces_per_ensemble": self.data_traces_per_ensemble,
+                    "auxiliary_traces_per_ensemble": self.auxiliary_traces_per_ensemble,
                     "ensemble_fold": self.ensemble_fold,
                 }
             )
 
-        if not include_none:
-            result = {
-                name: value
-                for name, value in result.items()
-                if value is not None
-            }
+        result = {}
+
+        for name, value in values.items():
+            if not include_none and value is None:
+                continue
+
+            field = BINARY_HEADER_FIELDS_BY_NAME[name]
+            result[name] = {
+                "value": value,
+                "bin_header_field": field.to_dict(),
+                }
 
         return result
 

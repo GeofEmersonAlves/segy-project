@@ -607,10 +607,7 @@ class SegyTraceHeader:
             default,
         )
 
-    def get_field(
-        self,
-        field_name: str,
-    ) -> HeaderField:
+    def get_field(self,field_name: str) -> HeaderField:
         """
         Retorna os metadados de um campo do Trace Header.
         """
@@ -618,28 +615,20 @@ class SegyTraceHeader:
             return TRACE_HEADER_FIELDS_BY_NAME[field_name]
 
         except KeyError as error:
-            raise UnknownHeaderFieldError(
-                f"O campo {field_name!r} não está definido no "
-                "Trace Header."
-            ) from error
+            raise UnknownHeaderFieldError(f"O campo {field_name!r} não está definido no "
+                                          "Trace Header.") from error
 
-    def raw_items(
-        self,
-    ) -> Iterator[tuple[HeaderField, HeaderValue]]:
+    def raw_items(self) -> Iterator[tuple[HeaderField, HeaderValue]]:
         """
         Percorre os metadados e valores brutos do Trace Header.
         """
         for field in TRACE_HEADER_FIELDS:
             yield field, self._values[field.name]
 
-    def to_dict(
-        self,
-        *,
-        effective_values: bool = False,
-        include_none: bool = True,
-    ) -> dict[str, HeaderValue]:
+    def to_dict(self, *, effective_values: bool = False, include_none: bool = True) -> dict[str, dict[str, Any]]:
         """
-        Converte o Trace Header para um novo dicionário.
+        Converte o Trace Header para um dicionário contendo
+        o valor e os metadados de cada campo.
 
         Parameters
         ----------
@@ -650,10 +639,11 @@ class SegyTraceHeader:
         include_none:
             Quando False, remove campos sem valor.
         """
-        result = dict(self._values)
+
+        values = dict(self._values)
 
         if effective_values:
-            result.update(
+            values.update(
                 {
                     "source_x": self.source_x,
                     "source_y": self.source_y,
@@ -661,45 +651,30 @@ class SegyTraceHeader:
                     "group_y": self.group_y,
                     "ensemble_x": self.ensemble_x,
                     "ensemble_y": self.ensemble_y,
-
-                    "receiver_group_elevation": (
-                        self.receiver_group_elevation
-                    ),
-
-                    "source_surface_elevation": (
-                        self.source_surface_elevation
-                    ),
-
+                    "receiver_group_elevation": (self.receiver_group_elevation),
+                    "source_surface_elevation": (self.source_surface_elevation),
                     "source_depth": self.source_depth,
-
-                    "receiver_datum_elevation": (
-                        self.receiver_datum_elevation
-                    ),
-
-                    "source_datum_elevation": (
-                        self.source_datum_elevation
-                    ),
-
-                    "source_water_depth": (
-                        self.source_water_depth
-                    ),
-
-                    "receiver_water_depth": (
-                        self.receiver_water_depth
-                    ),
-
-                    "shotpoint_number": (
-                        self.shotpoint_number
-                    ),
+                    "receiver_datum_elevation": (self.receiver_datum_elevation),
+                    "source_datum_elevation": (self.source_datum_elevation),
+                    "source_water_depth": (self.source_water_depth),
+                    "receiver_water_depth": (self.receiver_water_depth),
+                    "shotpoint_number": self.shotpoint_number,
                 }
             )
 
-        if not include_none:
-            result = {
-                name: value
-                for name, value in result.items()
-                if value is not None
-            }
+        result = {}
+
+        for name, value in values.items():
+
+            if not include_none and value is None:
+                continue
+
+            field = TRACE_HEADER_FIELDS_BY_NAME[name]
+
+            result[name] = {
+                            "value": value,
+                            "trace_header_field": field.to_dict(),
+                          }
 
         return result
 

@@ -9,6 +9,9 @@ def _on_segy_file_selected(path: Path):
 
 def _on_path_changed(path: Path):
     print(f'Diretório alterado: {path}')
+    # resp = input('Deseja alterar o caminho? [S/N]')
+    # if resp.upper() == 'S':
+    #     segy_browser.change_path(Path("H:\\")  )
 
 if __name__ == "__main__":
     config = AppConfig()
@@ -16,9 +19,8 @@ if __name__ == "__main__":
     button_style = config.button_style
     app = QApplication(sys.argv)
 
-    browser = SegyFileBrowser(segy_extensions, button_style)
-    browser.file_selected.connect(_on_segy_file_selected)
-    browser.path_changed.connect(_on_path_changed)
-    browser.show()
-
+    segy_browser = SegyFileBrowser(segy_extensions, button_style)
+    segy_browser.file_selected.connect(_on_segy_file_selected)
+    segy_browser.path_changed.connect(_on_path_changed)
+    segy_browser.show()
     sys.exit(app.exec())
