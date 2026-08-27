@@ -1,0 +1,20 @@
+   O SegyFileInspector possui a propriedade path que pode receber um Path ou None
+   Quando path é None somente a aba Summary fica visível com uma mensagem de que não há arquivo
+e neste caso o widget emite um signal avisando que não tem dados sendo exibidos
+   Quando o path é um Path de um segy existente, todas a abas são exibidas com as informações do SEGY
+e neste caso o widget emite um signal avisando que tem dados sendo exibidos
+
+Quando o widget tem dados sendo mostrados, ele permite, via metodos, salvar o conteudo das abas em arquivos.
+O Summary e o Text Header serão salvo em .txt, o bin e o trace poderão ser salvos em .txt/.csv/.xlsx 
+
+FUNCIONACIONALIDADE DE CADA ABA
+[TEXT HEADER]
+       Tera uma barra de status que permite ver a posição do cursor dentro do conteudo do text header
+       Terá um botao na barra de status para carregar o conteudo de um arquivo txt no Text Header do Segy que esta sendo exibido (que esta na proprieade path).
+       Tera um botão na barra de status para esconder/mostrar os caracteres "invisíveis"
+
+
+os metodos que gravam arquivos retornam um booleano que sera True se a gravação foi bem sucessida e falso se ocorrer algum erro.
+
+
+

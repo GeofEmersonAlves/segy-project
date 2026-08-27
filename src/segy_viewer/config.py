@@ -31,6 +31,7 @@ class AppConfig:
     app_theme = ""
 
     segy_extensions: tuple[str, ...] = (".sgy", ".segy") #Extensões SEG-Y reconhecidas
+
     default_trace_block_size: int = 500  # Tamanho inicial da janela, ainda precisa ajustar,
     button_style = """
                         QPushButton {
@@ -49,6 +50,35 @@ class AppConfig:
                             background-color: #d0d0d0;
                         }
                     """
+
+    status_bar_button_style = """
+                                QToolButton {
+                                    border: 1px solid transparent;
+                                    border-radius: 3px;
+                                    padding: 2px 6px;
+                                    background-color: transparent;
+                                }
+                            
+                                QToolButton:hover {
+                                    background-color: #e5e5e5;
+                                    border: 1px solid #c5c5c5;
+                                }
+                            
+                                QToolButton:pressed {
+                                    background-color: #d0d0d0;
+                                }
+                            
+                                QToolButton:checked {
+                                    background-color: #d6e9ff;
+                                    border: 1px solid #7aaee6;
+                                }
+                            
+                                QPushButton:hover {
+                                    background-color: #e3e3e3;
+                                    border-radius: 3px;
+                                    border: 1px solid #a9a9a9;
+                                }"
+                            """
 
     # -quantidade inicial de traces para visualização
     # -diretório de logs

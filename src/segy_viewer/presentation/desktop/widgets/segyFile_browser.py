@@ -26,7 +26,7 @@ Histórico:
 from PySide6.QtWidgets import (QWidget, QTreeView, QFileSystemModel,
                                QVBoxLayout, QFileIconProvider, QHBoxLayout,
                                QHeaderView, QAbstractItemView, QPushButton,
-                               QFileDialog, QLabel, QComboBox, QSizePolicy)
+                               QFileDialog, QLabel)
 from PySide6.QtCore import (QFileInfo, QDir, Slot,  QSettings, Signal,
                             QItemSelection, QStandardPaths, QSize, Qt)
 from PySide6.QtGui import QIcon
@@ -166,8 +166,6 @@ class SegyFileBrowser(QWidget):
         # self.model.setRootPath(str(path))
         self._set_current_diretory(path)
 
-
-
     # ========================================================================================================
     @Slot()
     def _button_level_up_clicked(self):
@@ -184,7 +182,7 @@ class SegyFileBrowser(QWidget):
 
     @Slot()
     def _button_open_folder_clicked(self):
-        dialog = QFileDialog(self, "Selecionar pasta")
+        dialog = QFileDialog(self, "Select folder")
         dialog.setFileMode(QFileDialog.FileMode.Directory)
         dialog.setOption(QFileDialog.Option.ShowDirsOnly, False)
         dialog.setOption(QFileDialog.Option.DontUseNativeDialog,True)
@@ -193,8 +191,8 @@ class SegyFileBrowser(QWidget):
         dialog.setDirectory(str(current_path))
 
         # Mostrar apenas arquivos SEG-Y e Todos os arquivos
-        filter_str = f'Arquivos SEG-Y {self._segy_extensions}'.replace('.','*.').replace("'","").replace(",","")
-        filter_str += ";;Todos os arquivos (*.*)"
+        filter_str = f'SEG-Y File {self._segy_extensions}'.replace('.','*.').replace("'","").replace(",","")
+        filter_str += ";;All files (*.*)"
         dialog.setNameFilter(filter_str)
         # Ícone personalizado
         dialog.setIconProvider(self._icon_sgyfile)

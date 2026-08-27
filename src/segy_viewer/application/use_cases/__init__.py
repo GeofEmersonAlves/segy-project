@@ -1,3 +1,4 @@
-from .inspect_segy_file import InspectSegyFile
+from .inspect_segy_file_container import SegyFileInspectorUseCases
 
-__all__ = ["InspectSegyFile"]
+__all__ = ["SegyFileInspectorUseCases",
+           ]
