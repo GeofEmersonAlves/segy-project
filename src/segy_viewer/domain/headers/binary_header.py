@@ -224,12 +224,12 @@ class SegyBinaryHeader:
             default=0,
         )
 
-    @property
-    def trace_count(self) -> int:
-        return self._int_value(
-            "trace_count",
-            default=0,
-        )
+    # @property
+    # def trace_count(self) -> int:
+    #     return self._int_value(
+    #         "trace_count",
+    #         default=0,
+    #     )
 
     @property
     def first_trace_byte_offset(self) -> int:

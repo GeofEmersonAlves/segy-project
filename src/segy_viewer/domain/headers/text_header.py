@@ -18,9 +18,13 @@ from dataclasses import dataclass
 from typing import ClassVar
 from segy_viewer.domain.exceptions.headers_exceptions import (InvalidTextHeaderCardCountError,
                                                               InvalidTextHeaderCardLengthError)
+from segy_viewer.domain.headers import TextHeaderEncoding
+
+
 @dataclass(frozen=True)
 class SegyTextHeader:
     cards: tuple[str, ...]
+    encoding: TextHeaderEncoding = TextHeaderEncoding.UNKNOWN
 
     CARD_COUNT: ClassVar[int] = 40
     CARD_LENGTH: ClassVar[int] = 80

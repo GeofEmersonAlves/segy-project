@@ -30,8 +30,6 @@ from PySide6.QtCore import Signal, Qt, QSize, Slot
 from PySide6.QtGui import QFontDatabase, QTextOption, QIcon
 from PySide6.QtWidgets import (QWidget, QTabWidget, QVBoxLayout, QPlainTextEdit,
                                QStatusBar, QTableView, QHeaderView, QPushButton, QFileDialog, QMessageBox)
-
-from segy_viewer.application import use_cases
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.application.dto import SegyFileInspectionDTO, CheckResponseDto
 from segy_viewer.application.types import InspectorSectionType

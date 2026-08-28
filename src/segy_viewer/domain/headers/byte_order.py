@@ -12,6 +12,7 @@ Descrição:
 
 Histórico:
        06/08/2026 - Início da implementação da Classe
+       28/08/2026 - Inclusão da Property display_name
 ===============================================================================
 """
 from enum import Enum
@@ -28,6 +29,14 @@ class ByteOrder(Enum):
     BIG_ENDIAN = "big"
     LITTLE_ENDIAN = "little"
     UNKNOWN = "unknown"
+
+    @property
+    def display_name(self) -> str:
+        return {
+            ByteOrder.BIG_ENDIAN: "Big Endian",
+            ByteOrder.LITTLE_ENDIAN: "Little Endian",
+            ByteOrder.UNKNOWN: "Unknown",
+        }[self]
 
     @classmethod
     def from_string(cls, value: str | None) -> "ByteOrder":

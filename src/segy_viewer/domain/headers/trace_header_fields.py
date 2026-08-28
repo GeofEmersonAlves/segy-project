@@ -12,6 +12,7 @@ Descrição:
 
 Histórico:
        08/08/2026 - Início da implementação da Classe
+       28/08/2026 - Tradução dos Descriptions para Ingles
 ===============================================================================
 """
 from .header_field import HeaderDataType, HeaderField
@@ -44,203 +45,203 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "trace_sequence_line",
         1, 4,
         HeaderDataType.INT32,
-        "Número sequencial do traço dentro da linha.",
+        "Trace sequence number within line.",
     ),
 
     trace_field(
         "trace_sequence_file",
         5, 8,
         HeaderDataType.INT32,
-        "Número sequencial do traço dentro do arquivo SEG-Y.",
+        "Trace sequence number within SEG-Y file.",
     ),
 
     trace_field(
         "field_record_number",
         9, 12,
         HeaderDataType.INT32,
-        "Número do registro de campo original.",
+        "Original field record number.",
     ),
 
     trace_field(
         "trace_number_field_record",
         13, 16,
         HeaderDataType.INT32,
-        "Número do traço dentro do registro de campo original.",
+        "Trace number within the original field record.",
     ),
 
     trace_field(
         "energy_source_point_number",
         17, 20,
         HeaderDataType.INT32,
-        "Número do ponto de fonte de energia.",
+        "Energy source point number.",
     ),
 
     trace_field(
         "ensemble_number",
         21, 24,
         HeaderDataType.INT32,
-        "Número do ensemble (CDP, CMP, CRP etc.).",
+        "Ensemble number.",
     ),
 
     trace_field(
         "trace_number_ensemble",
         25, 28,
         HeaderDataType.INT32,
-        "Número do traço dentro do ensemble.",
+        "Trace number within the ensemble.",
     ),
 
     trace_field(
         "trace_identification_code",
         29, 30,
         HeaderDataType.INT16,
-        "Código de identificação do traço.",
+        "Trace identification code.",
     ),
 
     trace_field(
         "vertically_summed_traces",
         31, 32,
         HeaderDataType.INT16,
-        "Número de traços somados verticalmente para formar este traço.",
+        "Number of vertically summed traces yielding this trace.",
     ),
 
     trace_field(
         "horizontally_stacked_traces",
         33, 34,
         HeaderDataType.INT16,
-        "Número de traços empilhados horizontalmente para formar este traço.",
+        "Number of horizontally stacked traces yielding this trace.",
     ),
 
     trace_field(
         "data_use",
         35, 36,
         HeaderDataType.INT16,
-        "Tipo de uso do dado: produção ou teste.",
+        "Data use.",
     ),
 
     trace_field(
         "source_receiver_offset",
         37, 40,
         HeaderDataType.INT32,
-        "Distância entre o centro da fonte e o centro do grupo receptor.",
+        "Distance from center of source point to center of receiver group.",
     ),
 
     trace_field(
         "receiver_group_elevation",
         41, 44,
         HeaderDataType.INT32,
-        "Elevação do grupo receptor.",
+        "Receiver group elevation.",
     ),
 
     trace_field(
         "source_surface_elevation",
         45, 48,
         HeaderDataType.INT32,
-        "Elevação da superfície na posição da fonte.",
+        "Surface elevation at source.",
     ),
 
     trace_field(
         "source_depth",
         49, 52,
         HeaderDataType.INT32,
-        "Profundidade da fonte abaixo da superfície.",
+        "Source depth below surface.",
     ),
 
     trace_field(
         "receiver_datum_elevation",
         53, 56,
         HeaderDataType.INT32,
-        "Elevação do datum sísmico no grupo receptor.",
+        "Datum elevation at receiver group.",
     ),
 
     trace_field(
         "source_datum_elevation",
         57, 60,
         HeaderDataType.INT32,
-        "Elevação do datum sísmico na fonte.",
+        "Datum elevation at source.",
     ),
 
     trace_field(
         "source_water_depth",
         61, 64,
         HeaderDataType.INT32,
-        "Altura da coluna d'água na posição da fonte.",
+        "Water depth at source.",
     ),
 
     trace_field(
         "receiver_water_depth",
         65, 68,
         HeaderDataType.INT32,
-        "Altura da coluna d'água na posição do grupo receptor.",
+        "Water depth at group.",
     ),
 
     trace_field(
         "elevation_scalar",
         69, 70,
         HeaderDataType.INT16,
-        "Escalar aplicado às elevações e profundidades dos bytes 41–68.",
+        "Scalar to be applied to all elevations and depths specified in bytes 41–68.",
     ),
 
     trace_field(
         "coordinate_scalar",
         71, 72,
         HeaderDataType.INT16,
-        "Escalar aplicado às coordenadas dos bytes 73–88 e 181–188.",
+        "Scalar to be applied to all coordinates specified in bytes 73–88 and 181–188.",
     ),
 
     trace_field(
         "source_x",
         73, 76,
         HeaderDataType.INT32,
-        "Coordenada X da fonte.",
+        "Source coordinate X.",
     ),
 
     trace_field(
         "source_y",
         77, 80,
         HeaderDataType.INT32,
-        "Coordenada Y da fonte.",
+        "Source coordinate Y.",
     ),
 
     trace_field(
         "group_x",
         81, 84,
         HeaderDataType.INT32,
-        "Coordenada X do grupo receptor.",
+        "Group coordinate X.",
     ),
 
     trace_field(
         "group_y",
         85, 88,
         HeaderDataType.INT32,
-        "Coordenada Y do grupo receptor.",
+        "Group coordinate Y.",
     ),
 
     trace_field(
         "coordinate_units",
         89, 90,
         HeaderDataType.INT16,
-        "Unidade das coordenadas.",
+        "Coordinate units.",
     ),
 
     trace_field(
         "weathering_velocity",
         91, 92,
         HeaderDataType.INT16,
-        "Velocidade da camada de intemperismo.",
+        "Weathering velocity.",
     ),
 
     trace_field(
         "subweathering_velocity",
         93, 94,
         HeaderDataType.INT16,
-        "Velocidade abaixo da camada de intemperismo.",
+        "Subweathering velocity.",
     ),
 
     trace_field(
         "uphole_time_source",
         95, 96,
         HeaderDataType.INT16,
-        "Tempo de uphole na fonte.",
+        "Uphole time at source.",
         unit="ms",
     ),
 
@@ -248,7 +249,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "uphole_time_group",
         97, 98,
         HeaderDataType.INT16,
-        "Tempo de uphole no grupo receptor.",
+        "Uphole time at group.",
         unit="ms",
     ),
 
@@ -256,7 +257,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "source_static_correction",
         99, 100,
         HeaderDataType.INT16,
-        "Correção estática da fonte.",
+        "Source static correction.",
         unit="ms",
     ),
 
@@ -264,7 +265,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "group_static_correction",
         101, 102,
         HeaderDataType.INT16,
-        "Correção estática do grupo receptor.",
+        "Group static correction.",
         unit="ms",
     ),
 
@@ -272,7 +273,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "total_static_applied",
         103, 104,
         HeaderDataType.INT16,
-        "Correção estática total aplicada.",
+        "Total static applied.",
         unit="ms",
     ),
 
@@ -280,7 +281,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "lag_time_a",
         105, 106,
         HeaderDataType.INT16,
-        "Lag Time A.",
+        "Lag time A.",
         unit="ms",
     ),
 
@@ -288,7 +289,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "lag_time_b",
         107, 108,
         HeaderDataType.INT16,
-        "Lag Time B.",
+        "Lag time B.",
         unit="ms",
     ),
 
@@ -296,7 +297,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "delay_recording_time",
         109, 110,
         HeaderDataType.INT16,
-        "Tempo entre a iniciação da fonte e o início da gravação.",
+        "Delay recording time.",
         unit="ms",
     ),
 
@@ -304,7 +305,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "mute_time_start",
         111, 112,
         HeaderDataType.INT16,
-        "Tempo inicial do mute.",
+        "Mute time — start time.",
         unit="ms",
     ),
 
@@ -312,7 +313,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "mute_time_end",
         113, 114,
         HeaderDataType.INT16,
-        "Tempo final do mute.",
+        "Mute time — end time.",
         unit="ms",
     ),
 
@@ -320,7 +321,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "samples_in_trace",
         115, 116,
         HeaderDataType.UINT16,
-        "Número de amostras neste traço.",
+        "Number of samples in this trace.",
         required=True,
     ),
 
@@ -328,7 +329,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "sample_interval",
         117, 118,
         HeaderDataType.UINT16,
-        "Intervalo de amostragem deste traço.",
+        "Sample interval in microseconds for this trace.",
         required=True,
     ),
 
@@ -336,14 +337,14 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "gain_type",
         119, 120,
         HeaderDataType.INT16,
-        "Tipo de ganho do instrumento de campo.",
+        "Gain type of field instruments.",
     ),
 
     trace_field(
         "instrument_gain_constant",
         121, 122,
         HeaderDataType.INT16,
-        "Constante de ganho do instrumento.",
+        "Instrument gain constant.",
         unit="dB",
     ),
 
@@ -351,7 +352,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "instrument_initial_gain",
         123, 124,
         HeaderDataType.INT16,
-        "Ganho inicial do instrumento.",
+        "Instrument early or initial gain.",
         unit="dB",
     ),
 
@@ -359,14 +360,14 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "correlated",
         125, 126,
         HeaderDataType.INT16,
-        "Indica se o traço foi correlacionado.",
+        "Correlated.",
     ),
 
     trace_field(
         "sweep_frequency_start",
         127, 128,
         HeaderDataType.INT16,
-        "Frequência inicial do sweep.",
+        "Sweep frequency at start.",
         unit="Hz",
     ),
 
@@ -374,7 +375,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "sweep_frequency_end",
         129, 130,
         HeaderDataType.INT16,
-        "Frequência final do sweep.",
+        "Sweep frequency at end.",
         unit="Hz",
     ),
 
@@ -382,7 +383,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "sweep_length",
         131, 132,
         HeaderDataType.INT16,
-        "Duração do sweep.",
+        "Sweep length.",
         unit="ms",
     ),
 
@@ -390,14 +391,14 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "sweep_type",
         133, 134,
         HeaderDataType.INT16,
-        "Tipo de sweep.",
+        "Sweep type.",
     ),
 
     trace_field(
         "sweep_trace_taper_length_start",
         135, 136,
         HeaderDataType.INT16,
-        "Comprimento do taper no início do sweep.",
+        "Sweep trace taper length at start.",
         unit="ms",
     ),
 
@@ -405,7 +406,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "sweep_trace_taper_length_end",
         137, 138,
         HeaderDataType.INT16,
-        "Comprimento do taper no final do sweep.",
+        "Sweep trace taper length at end.",
         unit="ms",
     ),
 
@@ -413,14 +414,14 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "taper_type",
         139, 140,
         HeaderDataType.INT16,
-        "Tipo de taper.",
+        "Taper type.",
     ),
 
     trace_field(
         "alias_filter_frequency",
         141, 142,
         HeaderDataType.INT16,
-        "Frequência do filtro anti-alias.",
+        "Alias filter frequency.",
         unit="Hz",
     ),
 
@@ -428,7 +429,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "alias_filter_slope",
         143, 144,
         HeaderDataType.INT16,
-        "Inclinação do filtro anti-alias.",
+        "Alias filter slope.",
         unit="dB/octave",
     ),
 
@@ -436,7 +437,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "notch_filter_frequency",
         145, 146,
         HeaderDataType.INT16,
-        "Frequência do filtro notch.",
+        "Notch filter frequency.",
         unit="Hz",
     ),
 
@@ -444,7 +445,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "notch_filter_slope",
         147, 148,
         HeaderDataType.INT16,
-        "Inclinação do filtro notch.",
+        "Notch filter slope.",
         unit="dB/octave",
     ),
 
@@ -452,7 +453,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "low_cut_frequency",
         149, 150,
         HeaderDataType.INT16,
-        "Frequência de low-cut.",
+        "Low-cut frequency.",
         unit="Hz",
     ),
 
@@ -460,7 +461,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "high_cut_frequency",
         151, 152,
         HeaderDataType.INT16,
-        "Frequência de high-cut.",
+        "High-cut frequency.",
         unit="Hz",
     ),
 
@@ -468,7 +469,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "low_cut_slope",
         153, 154,
         HeaderDataType.INT16,
-        "Inclinação do filtro low-cut.",
+        "Low-cut slope.",
         unit="dB/octave",
     ),
 
@@ -476,7 +477,7 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "high_cut_slope",
         155, 156,
         HeaderDataType.INT16,
-        "Inclinação do filtro high-cut.",
+        "High-cut slope.",
         unit="dB/octave",
     ),
 
@@ -484,84 +485,84 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "year_data_recorded",
         157, 158,
         HeaderDataType.INT16,
-        "Ano em que o dado foi registrado.",
+        "Year data recorded.",
     ),
 
     trace_field(
         "day_of_year",
         159, 160,
         HeaderDataType.INT16,
-        "Dia do ano.",
+        "Day of year.",
     ),
 
     trace_field(
         "hour_of_day",
         161, 162,
         HeaderDataType.INT16,
-        "Hora do dia.",
+        "Hour of day.",
     ),
 
     trace_field(
         "minute_of_hour",
         163, 164,
         HeaderDataType.INT16,
-        "Minuto da hora.",
+        "Minute of hour.",
     ),
 
     trace_field(
         "second_of_minute",
         165, 166,
         HeaderDataType.INT16,
-        "Segundo do minuto.",
+        "Second of minute.",
     ),
 
     trace_field(
         "time_basis_code",
         167, 168,
         HeaderDataType.INT16,
-        "Código da base de tempo.",
+        "Time basis code.",
     ),
 
     trace_field(
         "trace_weighting_factor",
         169, 170,
         HeaderDataType.INT16,
-        "Fator de ponderação do traço.",
+        "Trace weighting factor.",
     ),
 
     trace_field(
         "geophone_group_roll_switch",
         171, 172,
         HeaderDataType.INT16,
-        "Número do grupo de geofones do roll switch.",
+        "Geophone group number of roll switch position one.",
     ),
 
     trace_field(
         "geophone_group_trace_number_one",
         173, 174,
         HeaderDataType.INT16,
-        "Número do grupo de geofones do traço número um.",
+        "Geophone group number of trace number one within original field record.",
     ),
 
     trace_field(
         "geophone_group_last_trace",
         175, 176,
         HeaderDataType.INT16,
-        "Número do grupo de geofones do último traço.",
+        "Geophone group number of last trace within original field record.",
     ),
 
     trace_field(
         "gap_size",
         177, 178,
         HeaderDataType.INT16,
-        "Tamanho do gap: número total de grupos descartados.",
+        "Gap size — total number of groups dropped.",
     ),
 
     trace_field(
         "over_travel",
         179, 180,
         HeaderDataType.INT16,
-        "Over travel associado ao taper no início ou fim da linha.",
+        "Over travel associated with taper at beginning or end of line.",
     ),
 
     # ----------------------------------------------------------
@@ -572,42 +573,42 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "ensemble_x",
         181, 184,
         HeaderDataType.INT32,
-        "Coordenada X da posição do ensemble (CDP) deste traço.",
+        "X coordinate of ensemble (CDP) position of this trace.",
     ),
 
     trace_field(
         "ensemble_y",
         185, 188,
         HeaderDataType.INT32,
-        "Coordenada Y da posição do ensemble (CDP) deste traço.",
+        "Y coordinate of ensemble (CDP) position of this trace.",
     ),
 
     trace_field(
         "inline_number",
         189, 192,
         HeaderDataType.INT32,
-        "Número de inline para dados 3-D pós-stack.",
+        "For 3-D poststack data, in-line number.",
     ),
 
     trace_field(
         "crossline_number",
         193, 196,
         HeaderDataType.INT32,
-        "Número de crossline para dados 3-D pós-stack.",
+        "For 3-D poststack data, cross-line number.",
     ),
 
     trace_field(
         "shotpoint_number",
         197, 200,
         HeaderDataType.INT32,
-        "Número do shotpoint.",
+        "Shotpoint number.",
     ),
 
     trace_field(
         "shotpoint_scalar",
         201, 202,
         HeaderDataType.INT16,
-        "Escalar aplicado ao número do shotpoint.",
+        "Scalar to be applied to the shotpoint number.",
     ),
 
     # ----------------------------------------------------------
@@ -618,73 +619,70 @@ TRACE_HEADER_FIELDS: tuple[HeaderField, ...] = (
         "trace_value_measurement_unit",
         203, 204,
         HeaderDataType.INT16,
-        "Unidade de medida dos valores das amostras do traço.",
+        "Trace value measurement unit.",
     ),
 
     trace_field(
         "transduction_constant",
         205, 210,
         HeaderDataType.RAW_BYTES,
-        "Constante de transdução usada para converter as amostras "
-        "para as unidades de transdução.",
+        "Transduction constant used to convert Data Trace samples to the transduction units.",
     ),
 
     trace_field(
         "transduction_units",
         211, 212,
         HeaderDataType.INT16,
-        "Unidade de medida após aplicação da constante de transdução.",
+        "Transduction units.",
     ),
 
     trace_field(
         "device_trace_identifier",
         213, 214,
         HeaderDataType.INT16,
-        "Identificador da unidade ou dispositivo associado ao traço.",
+        "Device/Trace identifier.",
     ),
 
     trace_field(
         "time_scalar",
         215, 216,
         HeaderDataType.INT16,
-        "Escalar aplicado aos tempos especificados nos bytes 95–114.",
+        "Scalar to be applied to times specified in Trace Header bytes 95–114.",
     ),
 
     trace_field(
         "source_type_orientation",
         217, 218,
         HeaderDataType.INT16,
-        "Tipo e orientação da fonte de energia.",
+        "Source type/orientation.",
     ),
 
     trace_field(
         "source_energy_direction",
         219, 224,
         HeaderDataType.RAW_BYTES,
-        "Direção da energia da fonte para as orientações vertical, "
-        "cross-line e in-line.",
+        "Source energy direction with respect to source orientation.",
     ),
 
     trace_field(
         "source_measurement",
         225, 230,
         HeaderDataType.RAW_BYTES,
-        "Medição do esforço da fonte usado para gerar o traço.",
+        "Source measurement.",
     ),
 
     trace_field(
         "source_measurement_unit",
         231, 232,
         HeaderDataType.INT16,
-        "Unidade utilizada para a medição da fonte.",
+        "Source measurement unit.",
     ),
 
     trace_field(
         "trace_header_name",
         233, 240,
         HeaderDataType.RAW_BYTES,
-        "Zeros binários ou nome de oito caracteres do Trace Header "
-        "(por exemplo, 'SEG00000').",
+        "Trace Header name.",
     ),
 )
 

@@ -28,11 +28,13 @@ from segy_viewer.domain.files.seismic_reader import SeismicReader
 from segy_viewer.domain.headers import ByteOrder, SegyBinaryHeader, SegyTextHeader, SegyTraceHeader, HeaderDataType
 from segy_viewer.domain.headers.trace_header_fields import TRACE_HEADER_FIELDS
 from segy_viewer.domain.traces.seismic_trace import SeismicTrace
+from segy_viewer.infrastructure.segy import SegyRawReader
 
 class SegyioReader(SeismicReader):
     def __init__(self, path: str | Path) -> None:
         self._path = Path(path)
         self._segy_file: segyio.SegyFile | None = None
+        self._raw_reader:SeismicReader = SegyRawReader(self._path)
 
     @property
     def is_open(self) -> bool:
@@ -68,10 +70,19 @@ class SegyioReader(SeismicReader):
 
     def read_text_header(self) -> SegyTextHeader:
         _segy_file = self._require_open()
-        text = bytes(_segy_file.text[0]).decode("ascii")
-        cards = tuple(text[i:i + 80] for i in range(0, 3200, 80))
+        self._raw_reader.open()
+        segy_text_header = None
+        try:
+            segy_text_header: SegyTextHeader = self._raw_reader.read_text_header()
+        finally:
+            self._raw_reader.close()
 
-        return SegyTextHeader(cards)
+            if segy_text_header is None:
+                text = bytes(_segy_file.text[0]).decode("ascii")
+                cards = tuple(text[i:i + 80] for i in range(0, 3200, 80))
+                segy_text_header = SegyTextHeader(cards)
+
+            return segy_text_header
 
     def read_binary_header(self) -> SegyBinaryHeader:
         _segy_file = self._require_open()
