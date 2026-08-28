@@ -33,18 +33,24 @@ SegyFile
 
 Histórico:
        10/08/2026 - Início da implementação da Classe
+       27/08/2026 - Inclusão do Writer
 ===============================================================================
 """
-from segy_viewer.domain.files import SeismicFile, SeismicReader
+from segy_viewer.domain.files import SeismicFile, SeismicReader, SeismicWriter
 from segy_viewer.domain.datasets import SeismicDataset
 from segy_viewer.domain.headers import SegyTextHeader, SegyBinaryHeader
 from segy_viewer.infrastructure.segy import SegyioReader
+from segy_viewer.infrastructure.segy import SegyioWriter
 
 class SegyFile(SeismicFile):
-    def __init__(self, path: str, dataset: SeismicDataset | None = None, reader: SeismicReader | None = None ) -> None:
+    def __init__(self, path: str,
+                 dataset: SeismicDataset | None = None,
+                 reader: SeismicReader | None = None,
+                 writer: SeismicWriter | None = None) -> None:
         super().__init__(path)
 
         self._reader = SegyioReader(path)  if reader is None else reader
+        self._writer = SegyioWriter(path) if writer is None else writer
 
         self._dataset = dataset
 
@@ -63,6 +69,14 @@ class SegyFile(SeismicFile):
     @reader.setter
     def reader(self, reader: SeismicReader) :
         self._reader = reader
+
+    @property
+    def writer(self) -> SeismicWriter:
+        return self._writer
+
+    @writer.setter
+    def writer(self, writer: SeismicWriter) :
+        self._writer = writer
 
     @property
     def format_name(self) -> str:

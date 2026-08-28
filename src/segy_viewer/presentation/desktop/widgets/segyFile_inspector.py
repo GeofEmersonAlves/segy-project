@@ -20,7 +20,8 @@ Descrição:
 Histórico:
        16/08/2026 - Implementação da Classe
        19/08/2026 - Continuação da implementação do widget
-       21/08/2026 - Início da criação daa tabelas das abas Bin Header e Trace Header
+       21/08/2026 - Início da criação das tabelas das abas Bin Header e Trace Header
+       27/08/2026 - Finalização das funcionalidades da aba Text Header
 ===============================================================================
 """
 from idlelib.rpc import response_queue
@@ -29,6 +30,8 @@ from PySide6.QtCore import Signal, Qt, QSize, Slot
 from PySide6.QtGui import QFontDatabase, QTextOption, QIcon
 from PySide6.QtWidgets import (QWidget, QTabWidget, QVBoxLayout, QPlainTextEdit,
                                QStatusBar, QTableView, QHeaderView, QPushButton, QFileDialog, QMessageBox)
+
+from segy_viewer.application import use_cases
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.application.dto import SegyFileInspectionDTO, CheckResponseDto
 from segy_viewer.application.types import InspectorSectionType
@@ -38,6 +41,8 @@ _BASE_DIR = Path(__file__).resolve().parents[5]
 _WHITESPACE_ICO = _BASE_DIR / "resources" / "icons" / "withespace.png"
 _EXPORT_ICO = _BASE_DIR / "resources" / "icons" / "export.png"
 _IMPORT_TEXT_HEADER_ICO = _BASE_DIR / "resources" / "icons" / "import.png"
+_RESET_TEXT_HEADER_ICO = _BASE_DIR / "resources" / "icons" / "reset.png"
+_UPDATE_TEXT_HEADER_ICO = _BASE_DIR / "resources" / "icons" / "update.png"
 
 
 class SegyFileInspector(QWidget):
@@ -95,6 +100,8 @@ class SegyFileInspector(QWidget):
        self._trace_header_table_model.set_data(data={})
 
        #Esconde as abas deixando somente summary visivel
+       # Esconde os botoes de reset e update
+       self._hide_show_text_header_buttons(is_visible=False)
        self._tabs.setTabVisible(1, False)
        self._tabs.setTabVisible(2, False)
        self._tabs.setTabVisible(3, False)
@@ -116,6 +123,8 @@ class SegyFileInspector(QWidget):
         self._tabs.setTabVisible(1, True)
         self._tabs.setTabVisible(2, True)
         self._tabs.setTabVisible(3, True)
+        #Esconde os botoes de reset e update
+        self._hide_show_text_header_buttons(is_visible=False)
 
         self.segy_inspector_has_data.emit()
 
@@ -172,6 +181,7 @@ class SegyFileInspector(QWidget):
             self._text_header =_create_text_view()
             self._text_header_status_bar = QStatusBar()
 
+            #Cria os botões da status bar do Text Header
             self._export_text_header_button = _create_status_bar_button(icon_path=_EXPORT_ICO,
                                                                         txt_tooltip = "Export Text Header to text file" )
             self._export_text_header_button.clicked.connect(self._export_text_header)
@@ -189,6 +199,21 @@ class SegyFileInspector(QWidget):
                                                                                 checked
                                                                                 ))
 
+            #Cria os botões Reset e Update do Text Header
+            self._reset_text_header_button = _create_status_bar_button(icon_path=_RESET_TEXT_HEADER_ICO,
+                                                                       txt_tooltip = "Reset Text Header to original text" )
+            self._reset_text_header_button.setText("Reset")
+            self._reset_text_header_button.clicked.connect(self._reset_text_header)
+            self._update_text_header_button = _create_status_bar_button(icon_path=_UPDATE_TEXT_HEADER_ICO,
+                                                                        txt_tooltip = "Update Text Header to SEGY file" )
+            self._update_text_header_button.setText("Update")
+            self._update_text_header_button.clicked.connect(self._update_text_header)
+            self._hide_show_text_header_buttons(is_visible=False)
+
+            # Adiciona os botões Reset e Update na status bar do Text Header
+            self._text_header_status_bar.addPermanentWidget(self._reset_text_header_button)
+            self._text_header_status_bar.addPermanentWidget(self._update_text_header_button)
+            #Adiciona os botões na status bar do Text Header
             self._text_header_status_bar.addPermanentWidget(self._export_text_header_button)
             self._text_header_status_bar.addPermanentWidget(self._import_text_header_button)
             self._text_header_status_bar.addPermanentWidget(self._show_whitespace_button)
@@ -266,13 +291,49 @@ class SegyFileInspector(QWidget):
                                                                  filter=filter
                                                                  )
         if len(file_name) > 0:
-            text_header = self.use_cases.import_text_header_from_txt_file.read_text(Path(file_name))
-            response_dto: CheckResponseDto = self.use_cases.import_text_header_from_txt_file.validate_text(text_header)
+            text_header = self.use_cases.text_header_from_txt_file.read_text_header_from_file(Path(file_name))
+            response_dto: CheckResponseDto = self.use_cases.text_header_from_txt_file.validate_text(text_header)
             if response_dto.checked_pass:
                self._text_header.setPlainText(text_header)
+               self._hide_show_text_header_buttons(is_visible=True)
 
             else:
                 QMessageBox.critical(self,"Error",response_dto.message )
+
+
+    @Slot()
+    def _reset_text_header(self):
+        _resp =  QMessageBox.question(self,"Confirmation", "Do you want to restore the original Text Header?",
+                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                                     )
+        if _resp == QMessageBox.StandardButton.Yes:
+            self._text_header.setPlainText(self._inspetion_dto.text_header)
+            self._hide_show_text_header_buttons(is_visible=False)
+
+    @Slot()
+    def _update_text_header(self):
+        _resp = QMessageBox.question(self, "Confirmation", "Do you want to save Text Header in Segy file?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                                     )
+
+        if _resp == QMessageBox.StandardButton.Yes:
+            use_case = self.use_cases.text_header_from_txt_file
+            text_header = self._text_header.toPlainText()
+            response_dto: CheckResponseDto = use_case.write_text_header_into_segy(self.segy_path, text_header)
+            if response_dto.checked_pass:
+                self._hide_show_text_header_buttons(is_visible=False)
+                QMessageBox.information(self, "Text Header Saved","Text Header saved successfully.")
+                self._fill_tabs_with_dto()
+
+            else:
+                QMessageBox.critical(self, "Error",response_dto.message )
+
+
+    def _hide_show_text_header_buttons(self,is_visible: bool) -> None:
+        self._reset_text_header_button.setDisabled(not is_visible)
+        self._update_text_header_button.setDisabled(not is_visible)
+        self._reset_text_header_button.setVisible(is_visible)
+        self._update_text_header_button.setVisible(is_visible)
 
 
 

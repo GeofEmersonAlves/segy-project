@@ -15,6 +15,7 @@ Descrição:
 Histórico:
        17/08/2026 - Criação do container SegyFileInspectorUseCases, que conscentra todas
                   as use cases do Widget SegyFileInspector
+       27/08/2026 - Inlcusão do use case ImportTextHeaderFromTxtFile
 ===============================================================================
 """
 from collections.abc import Callable
@@ -31,7 +32,7 @@ class SegyFileInspectorUseCases:
     def __init__(self, file_factory: Callable[[Path], SeismicFile] ) -> None:
         self.inspect_segy_file:InspectSegyFile = InspectSegyFile(file_factory = file_factory)
         self.export_segy_dto:ExportSegyDTO = ExportSegyDTO()
-        self.import_text_header_from_txt_file:ImportTextHeaderFromTxtFile = ImportTextHeaderFromTxtFile()
+        self.text_header_from_txt_file = ImportTextHeaderFromTxtFile(file_factory = file_factory)
 
 
 

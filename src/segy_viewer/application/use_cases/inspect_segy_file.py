@@ -17,10 +17,8 @@ Histórico:
 
 from collections.abc import Callable
 from pathlib import Path
-
 from segy_viewer.application.dto import SegyFileInspectionDTO
 from segy_viewer.domain.files import SeismicFile
-
 
 class InspectSegyFile:
     def __init__(self, file_factory: Callable[[Path], SeismicFile]) -> None:
@@ -71,5 +69,10 @@ class InspectSegyFile:
         sumary_txt +=  "\n"
         sumary_txt += "SEG-Y" + "\n"
         sumary_txt += linha
+        sumary_txt += "\n"
+        sumary_txt += "DATA" + "\n"
+        sumary_txt += linha
+        sumary_txt += f"Traces          : {_format_file_size(path.stat().st_size)}" + "\n"
+
 
         return sumary_txt
