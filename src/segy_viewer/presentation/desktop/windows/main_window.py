@@ -44,6 +44,7 @@ class MainWindow(QMainWindow):
         self._set_segy_actions_enabled(False)
 
 
+
     def _create_central_widget(self) -> None:
         splitter = QSplitter(Qt.Orientation.Horizontal)
 

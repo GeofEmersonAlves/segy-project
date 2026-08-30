@@ -108,16 +108,16 @@ class SegyFileInspector(QWidget):
        self.segy_inspector_empty.emit()
 
     def export_summary(self):
-        QMessageBox.critical(self,"METOTO AINDA NAO IMPLEMENTADAO", "TEM QUE IMPLEMENTAR ESTE METODO")
+        self._export_dto_content(InspectorSectionType.SUMMARY)
 
     def export_text_header(self) :
-        self._export_text_header()
+        self._export_dto_content(InspectorSectionType.TEXT_HEADER)
 
     def export_binary_header(self) :
-        QMessageBox.critical(self,"METOTO AINDA NAO IMPLEMENTADAO", "TEM QUE IMPLEMENTAR ESTE METODO")
+        self._export_dto_content(InspectorSectionType.BIN_HEADER)
 
     def export_trace_header(self) :
-        QMessageBox.critical(self,"METOTO AINDA NAO IMPLEMENTADAO", "TEM QUE IMPLEMENTAR ESTE METODO")
+        self._export_dto_content(InspectorSectionType.TRACE_HEADER)
 
     def import_text_header(self):
         self._import_text_header()
@@ -180,7 +180,7 @@ class SegyFileInspector(QWidget):
             #Cria os botões da status bar do Text Header
             self._export_text_header_button = self._create_status_bar_button(icon_path=_EXPORT_ICO,
                                                                              txt_tooltip="Export Text Header to text file")
-            self._export_text_header_button.clicked.connect(self._export_text_header)
+            self._export_text_header_button.clicked.connect(lambda : self._export_dto_content(InspectorSectionType.TEXT_HEADER))
             self._import_text_header_button = self._create_status_bar_button(icon_path=_IMPORT_TEXT_HEADER_ICO,
                                                                              txt_tooltip = "Import text file to this Segy Text Header" )
             self._import_text_header_button.clicked.connect(self._import_text_header)
@@ -284,6 +284,7 @@ class SegyFileInspector(QWidget):
 
         return _table_view
 
+
     @Slot()
     def _change_text_edit_theme(self, text_view: QPlainTextEdit, theme_button : QPushButton, enabled: bool):
         palette = text_view.palette()
@@ -322,26 +323,44 @@ class SegyFileInspector(QWidget):
         option.setFlags(flags)
         text_view.document().setDefaultTextOption(option)
 
+
     @Slot()
-    def _export_text_header(self):
-        _file_name = self.segy_path.stem + "_TEXT_HEADER"
-        txt_file_path = str(self.segy_path.parent / _file_name)
-        txt_file_path, selected_filter = QFileDialog.getSaveFileName(self,
-                                                                    "Export Text Header to text file",
-                                                                    txt_file_path,
-                                                                    self.use_cases.export_segy_dto.TXT_FILTER
+    def _export_dto_content(self, section_name:InspectorSectionType):
+        _file_name = self.segy_path.stem
+        if section_name == InspectorSectionType.SUMMARY:
+            _file_name +=  "_SUMMARY"
+            _file_filter=self.use_cases.export_segy_dto.TXT_FILTER
+
+        elif section_name == InspectorSectionType.TEXT_HEADER:
+            _file_name +=  "_TEXT_HEADER"
+            _file_filter = self.use_cases.export_segy_dto.TXT_FILTER
+
+        elif section_name == InspectorSectionType.BIN_HEADER:
+            _file_name += "_BIN_HEADER"
+            _file_filter = self.use_cases.export_segy_dto.DICT_FILES_FILTER
+
+        elif section_name == InspectorSectionType.TRACE_HEADER:
+           _file_name += "_TRACE_HEADER"
+           _file_filter = self.use_cases.export_segy_dto.DICT_FILES_FILTER
+
+        _file_path = str(self.segy_path.parent / _file_name)
+        _file_path, selected_filter = QFileDialog.getSaveFileName(self,
+                                                                    caption=f"Export {section_name.value} to file",
+                                                                    dir=_file_path,
+                                                                    filter=_file_filter
                                                                      )
-        if len(txt_file_path) > 0:
+        if len(_file_path) > 0:
             _file_saved = self.use_cases.export_segy_dto.execute(segy_inspetion_dto = self._inspetion_dto,
-                                                                 section_name = InspectorSectionType.TEXT_HEADER,
-                                                                 file_path = Path(txt_file_path),
+                                                                 section_name = section_name,
+                                                                 file_path = Path(_file_path),
                                                                  file_filter = selected_filter
                                                                  )
             if _file_saved:
-                QMessageBox.information(self, "Text Header Saved","File saved successfully.")
+                QMessageBox.information(self, f"{section_name.value} Saved","File saved successfully.")
 
             else:
-                QMessageBox.critical(self, "Text Header NOT Saved","Problems saving the file!")
+                QMessageBox.critical(self, f"{section_name.value} NOT Saved","Problems saving the file!")
+
 
     @Slot()
     def _import_text_header(self):
