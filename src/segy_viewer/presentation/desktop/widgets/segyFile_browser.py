@@ -96,7 +96,18 @@ class SegyFileBrowser(QWidget):
         self.tree.setItemsExpandable(False)
 
         self.tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.tree.setSelectionBehavior( QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tree.setStyleSheet("""
+                                    QTreeView::item:selected {
+                                        background-color: #0078D7;
+                                        color: white;
+                                    }
+                                
+                                    QTreeView::item:selected:!active {
+                                        background-color: #0078D7;
+                                        color: white;
+                                    }
+                                """)
 
         self.tree.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.tree.doubleClicked.connect(self._on_double_clicked)

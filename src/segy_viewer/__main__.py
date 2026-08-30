@@ -38,7 +38,7 @@ def main() -> int:
 
     main_window = create_application()
     main_window.setWindowTitle(app_name)
-    main_window.show()
+    main_window.showMaximized()
 
     return app.exec()
 
