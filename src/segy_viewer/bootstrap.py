@@ -13,11 +13,13 @@ Descrição:
 
 Histórico:
        16/08/2026 - Início da implementação
+       29/08/2026 - Inclusão da main window
 ===============================================================================
 """
 from pathlib import Path
-
-from segy_viewer.presentation.desktop.widgets import SegyFileInspector
+from segy_viewer import AppConfig
+from segy_viewer.presentation.desktop import MainWindow
+from segy_viewer.presentation.desktop.widgets import SegyFileInspector, SegyFileBrowser
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.infrastructure.segy import SegyFile
 
@@ -26,12 +28,22 @@ def create_segy_file(path: Path) -> SegyFile:
     return SegyFile(path)
 
 def create_application():
-    segy_file_inspector_use_cases = SegyFileInspectorUseCases(file_factory=create_segy_file)
-    segy_file_inspector = SegyFileInspector(inspector_use_cases = segy_file_inspector_use_cases)
+    #CONFIG
+    config = AppConfig()
+    segy_extensions = config.segy_extensions
+    button_style = config.button_style
+    inspec_status_bar_button_style = AppConfig.status_bar_button_style
 
-    # main_window = MainWindow(
-    #                          segy_file_inspector=segy_file_inspector
-    #                         )
-    #
-    # return main_window
-    ...
+    #USE CASES
+    inspector_use_cases = SegyFileInspectorUseCases(file_factory=create_segy_file)
+
+    # WIDGETS
+    segy_file_inspector = SegyFileInspector(inspector_use_cases=inspector_use_cases, status_bar_button_style=inspec_status_bar_button_style)
+    segy_file_browser = SegyFileBrowser(segy_extensions = segy_extensions, button_style = button_style)
+
+    # Main Window
+    main_window = MainWindow(file_browser= segy_file_browser,
+                             file_inspector=segy_file_inspector
+                             )
+
+    return main_window

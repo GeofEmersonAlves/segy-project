@@ -20,13 +20,12 @@ Histórico:
        13/08/2026 - Início da implementação da Classe
 ===============================================================================
 """
-
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class AppConfig:
     app_name: str = "SEG-Y Viewer" #Nome da aplicação
-    app_version: str = "0.1.0"     #Versão
+    app_version: str = "1.0.0"     #Versão
     app_author: str = "Emerson Alves da Silva"
     app_theme = ""
 
@@ -38,7 +37,7 @@ class AppConfig:
                             border: 1px solid #cfcfcf;
                             border-radius: 4px;
                             background-color: #f5f5f5;
-                            padding: 3px;
+                            padding: 1px;
                         }
                     
                         QPushButton:hover {

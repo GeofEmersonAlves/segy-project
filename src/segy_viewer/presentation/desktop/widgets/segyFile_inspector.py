@@ -106,6 +106,32 @@ class SegyFileInspector(QWidget):
 
        self.segy_inspector_empty.emit()
 
+    def export_summary(self):
+        QMessageBox.critical(self,"METOTO AINDA NAO IMPLEMENTADAO", "TEM QUE IMPLEMENTAR ESTE METODO")
+
+    def export_text_header(self) :
+        self._export_text_header()
+
+    def export_binary_header(self) :
+        QMessageBox.critical(self,"METOTO AINDA NAO IMPLEMENTADAO", "TEM QUE IMPLEMENTAR ESTE METODO")
+
+    def export_trace_header(self) :
+        QMessageBox.critical(self,"METOTO AINDA NAO IMPLEMENTADAO", "TEM QUE IMPLEMENTAR ESTE METODO")
+
+    def import_text_header(self):
+        self._import_text_header()
+
+    def show_summary(self) :
+        self._tabs.setCurrentIndex(0)
+
+    def show_text_header(self) :
+        self._tabs.setCurrentIndex(1)
+
+    def show_binary_header(self) :
+        self._tabs.setCurrentIndex(2)
+
+    def show_trace_header(self) :
+        self._tabs.setCurrentIndex(3)
 # =======================================================================
     def _fill_tabs_with_dto(self):
         inspetion_dto: SegyFileInspectionDTO = self.use_cases.inspect_segy_file.execute(self._segy_path)

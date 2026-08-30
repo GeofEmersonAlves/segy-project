@@ -76,6 +76,7 @@ class SegyFileBrowser(QWidget):
         initial_path = self._inital_path()
         root_index = self.model.index(str(initial_path))  #Este é usado no self.tree
         self.model.setRootPath(str(initial_path))
+        self._path = initial_path
 
         name_filters = [f'*{ext}' for ext in self._segy_extensions]
         self.model.setNameFilters(name_filters)
@@ -111,7 +112,7 @@ class SegyFileBrowser(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
 
         #Botões para navegação do SegyFileBrowser
-        buttons_layout = QHBoxLayout()
+        buttons_layout = QVBoxLayout()
 
         self.up_button = self._make_button("", _ICON_UP_BUTTON, "Go to previous directory")
         self.up_button.clicked.connect(self._button_level_up_clicked)
@@ -136,15 +137,18 @@ class SegyFileBrowser(QWidget):
         buttons_layout.addWidget(self.refresh_button)
         buttons_layout.addStretch()
 
-        self.path_label = QLabel()
-        self.path_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.path_label.setText(str(initial_path))
+        # self.path_label = QLabel()
+        # self.path_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        # self.path_label.setText(str(initial_path))
 
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
+        # layout.addWidget(self.path_label)
         layout.addLayout(buttons_layout)
-        layout.addWidget(self.path_label)
         layout.addWidget(self.tree)
 
+    @property
+    def path(self)-> Path:
+        return self._path
 
 #========================================================================================================
     #Método publico para expor a funcionalidade de selecionar um diretório
@@ -154,6 +158,9 @@ class SegyFileBrowser(QWidget):
         """
         self._button_open_folder_clicked()
 
+    #Metodo público que expoe a funcionalidade refresh diretorio atual
+    def refresh(self) -> None:
+        self._refresh_current_directory()
 
     #Método publico que permite alterar o path que esta sendo exibido
     def change_path(self, path: Path):
@@ -253,6 +260,7 @@ class SegyFileBrowser(QWidget):
         path = Path(self.model.filePath(index))
 
         if path.is_dir():
+            self._path = path
             self.tree.setRootIndex(index)
             self._set_current_diretory(path)
 
@@ -275,7 +283,7 @@ class SegyFileBrowser(QWidget):
     def _make_button(self, text_button: str, path_icon: Path, tooltip_text: str ) -> QPushButton:
         btn = QPushButton(text_button)
         btn.setIcon(QIcon(str(path_icon)))
-        btn.setIconSize(QSize(34, 25))
+        btn.setIconSize(QSize(20, 15))
         btn.setToolTip(tooltip_text)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setStyleSheet(self._button_style)
@@ -284,5 +292,6 @@ class SegyFileBrowser(QWidget):
 
     def _set_current_diretory(self, path:Path) -> None:
         self._settings.setValue("file_browser/last_directory", str(path))
-        self.path_label.setText(str(path))
+        # self.path_label.setText(str(path))
+        self._path = path
         self.path_changed.emit(path)
