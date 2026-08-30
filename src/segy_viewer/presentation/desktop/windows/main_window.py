@@ -16,7 +16,7 @@ Histórico:
 from pathlib import Path
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QSplitter, QStatusBar, QLabel
+from PySide6.QtWidgets import QMainWindow, QSplitter, QStatusBar, QLabel, QToolBar
 from segy_viewer.presentation.desktop.widgets import SegyFileBrowser, SegyFileInspector
 
 class MainWindow(QMainWindow):
@@ -34,6 +34,7 @@ class MainWindow(QMainWindow):
 
         self._create_actions()
         self._create_menu_bar()
+        # self._create_tool_bar()
         self._create_central_widget()
         self._create_status_bar()
         self._connect_signals()
