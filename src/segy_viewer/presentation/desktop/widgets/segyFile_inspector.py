@@ -337,11 +337,11 @@ class SegyFileInspector(QWidget):
 
         elif section_name == InspectorSectionType.BIN_HEADER:
             _file_name += "_BIN_HEADER"
-            _file_filter = self.use_cases.export_segy_dto.DICT_FILES_FILTER
+            _file_filter = self.use_cases.export_segy_dto.DICT_FILE_FILTERS
 
         elif section_name == InspectorSectionType.TRACE_HEADER:
            _file_name += "_TRACE_HEADER"
-           _file_filter = self.use_cases.export_segy_dto.DICT_FILES_FILTER
+           _file_filter = self.use_cases.export_segy_dto.DICT_FILE_FILTERS
 
         _file_path = str(self.segy_path.parent / _file_name)
         _file_path, selected_filter = QFileDialog.getSaveFileName(self,

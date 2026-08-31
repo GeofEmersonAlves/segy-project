@@ -42,6 +42,5 @@ def main() -> int:
 
     return app.exec()
 
-
 if __name__ == "__main__":
     sys.exit(main())

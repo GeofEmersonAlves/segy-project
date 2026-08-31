@@ -64,7 +64,7 @@ class SegyFileBrowser(QWidget):
     file_selected = Signal(Path)  #Signal emitido quando o usuário clica em um arquivo
     path_changed = Signal(Path)   #Signal emitido quando o usuário muda a pasta
 
-    def __init__(self, segy_extensions: tuple[str, ...], button_style: str, parent=None):
+    def __init__(self, segy_extensions: tuple[str, ...], button_style: str, tree_style:str , parent=None):
         super().__init__(parent)
 
         self._settings = QSettings("SegyViewer", "SegyViewer")
@@ -97,17 +97,7 @@ class SegyFileBrowser(QWidget):
 
         self.tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tree.setStyleSheet("""
-                                    QTreeView::item:selected {
-                                        background-color: #0078D7;
-                                        color: white;
-                                    }
-                                
-                                    QTreeView::item:selected:!active {
-                                        background-color: #0078D7;
-                                        color: white;
-                                    }
-                                """)
+        self.tree.setStyleSheet(tree_style)
 
         self.tree.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.tree.doubleClicked.connect(self._on_double_clicked)
@@ -137,7 +127,6 @@ class SegyFileBrowser(QWidget):
         self.sort_button2 = self._make_button("", _ICON_SORT_BUTTON2, "Change file size sort order")
         self.sort_button2.clicked.connect(self._button_sort_size_clicked)
 
-
         self.refresh_button = self._make_button("", _ICON_REFRESH_BUTTON, "Refresh list")
         self.refresh_button.clicked.connect(self._refresh_current_directory)
 
@@ -148,12 +137,7 @@ class SegyFileBrowser(QWidget):
         buttons_layout.addWidget(self.refresh_button)
         buttons_layout.addStretch()
 
-        # self.path_label = QLabel()
-        # self.path_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        # self.path_label.setText(str(initial_path))
-
         layout = QHBoxLayout(self)
-        # layout.addWidget(self.path_label)
         layout.addLayout(buttons_layout)
         layout.addWidget(self.tree)
 

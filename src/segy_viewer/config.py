@@ -79,6 +79,18 @@ class AppConfig:
                                 }"
                             """
 
+    tree_browser_style = """
+                            QTreeView::item:selected {
+                                background-color: #0078D7;
+                                color: white;
+                            }
+                        
+                            QTreeView::item:selected:!active {
+                                background-color: #0078D7;
+                                color: white;
+                            }
+                        """
+
     # -quantidade inicial de traces para visualização
     # -diretório de logs
     # -limites de cache
