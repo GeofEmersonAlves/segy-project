@@ -30,6 +30,8 @@ from PySide6.QtCore import Signal, Qt, QSize, Slot
 from PySide6.QtGui import QFontDatabase, QTextOption, QIcon, QPalette
 from PySide6.QtWidgets import (QWidget, QTabWidget, QVBoxLayout, QPlainTextEdit,
                                QStatusBar, QTableView, QHeaderView, QPushButton, QFileDialog, QMessageBox, QLabel)
+from pygments.lexers import _css_builtins
+
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.application.dto import SegyFileInspectionDTO, CheckResponseDto
 from segy_viewer.application.types import InspectorSectionType
@@ -233,8 +235,21 @@ class SegyFileInspector(QWidget):
         return _text_view
 
     def _create_text_status_bar(self, text_view: QPlainTextEdit, status_label: QLabel, theme_button : QPushButton) -> QStatusBar:
+        def _add_padding_left_button(button: QPushButton):
+            button.setStyleSheet(
+                self._status_bar_button_style +
+                """
+                QPushButton {
+                    padding: 2px 1px;
+                }
+                """
+            )
         _show_whitespace_button = self._create_status_bar_button(icon_path=_WHITESPACE_ICO,txt_tooltip="Show whitespaces")
         _show_whitespace_button.setCheckable(True)
+        _add_padding_left_button(_show_whitespace_button)
+
+        _left_button_size = QSize(15, 15)
+        _show_whitespace_button.setIconSize(_left_button_size)
         _show_whitespace_button.toggled.connect(lambda checked:
                                                      self._set_show_invisible_characters(
                                                          text_view,
@@ -247,6 +262,8 @@ class SegyFileInspector(QWidget):
                                                 )  # Para atualizar a barra de status do Text Header
 
         theme_button.setCheckable(True)
+        _add_padding_left_button(theme_button)
+        theme_button.setIconSize(_left_button_size)
         theme_button.toggled.connect(lambda checked:
                                      self._change_text_edit_theme(text_view=text_view,
                                                                   theme_button=theme_button,
@@ -261,7 +278,7 @@ class SegyFileInspector(QWidget):
     def _create_status_bar_button(self, icon_path: Path, txt_tooltip: str) -> QPushButton:
         button = QPushButton()
         button.setIcon(QIcon(str(icon_path)))
-        button.setIconSize(QSize(15, 17))
+        button.setIconSize(QSize(20, 20))
         button.setToolTip(txt_tooltip)
         button.setStyleSheet(self._status_bar_button_style)
 
@@ -298,6 +315,7 @@ class SegyFileInspector(QWidget):
             theme_button.setIcon(QIcon(str(_NIGHT_THEME_ICO)))
         else:
             theme_button.setIcon(QIcon(str(_DAY_THEME_ICO)))
+
 
 
     @Slot()

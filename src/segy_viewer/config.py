@@ -51,23 +51,23 @@ class AppConfig:
                     """
 
     status_bar_button_style = """
-                                QToolButton {
+                                QPushButton {
                                     border: 1px solid transparent;
                                     border-radius: 3px;
                                     padding: 2px 6px;
                                     background-color: transparent;
                                 }
                             
-                                QToolButton:hover {
+                                QPushButton:hover {
                                     background-color: #e5e5e5;
                                     border: 1px solid #c5c5c5;
                                 }
                             
-                                QToolButton:pressed {
+                                QPushButton:pressed {
                                     background-color: #d0d0d0;
                                 }
                             
-                                QToolButton:checked {
+                                QPushButton:checked {
                                     background-color: #d6e9ff;
                                     border: 1px solid #7aaee6;
                                 }
@@ -76,7 +76,7 @@ class AppConfig:
                                     background-color: #e3e3e3;
                                     border-radius: 3px;
                                     border: 1px solid #a9a9a9;
-                                }"
+                                }
                             """
 
     tree_browser_style = """

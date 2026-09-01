@@ -43,8 +43,6 @@ class MainWindow(QMainWindow):
         self._file_inspector.clear_tabs_content()
         self._set_segy_actions_enabled(False)
 
-
-
     def _create_central_widget(self) -> None:
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
@@ -91,9 +89,9 @@ class MainWindow(QMainWindow):
 
         # -------------------------
         # Tools
+        self._julian_day_action = QAction("Julian day calendar", self)
         self._md5_action = QAction("MD5", self)
         self._file_size_calculator_action = QAction("Segy File Size Calculator", self)
-        self._julian_day_action = QAction("Julian Day", self)
 
         # -------------------------
         # Help
