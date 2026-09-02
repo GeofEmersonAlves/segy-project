@@ -20,5 +20,5 @@ from enum import StrEnum
 class InspectorSectionType(StrEnum):
     SUMMARY = "Summary"
     TEXT_HEADER = "Text Header"
-    BIN_HEADER = "Bin Header"
+    BIN_HEADER = "Binary Header"
     TRACE_HEADER = "Trace Header"

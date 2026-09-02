@@ -127,7 +127,7 @@ class InspectSegyFile:
         sumary_txt += f"Traces                  : {trace_count:,.0f}" + "\n"
         sumary_txt += f"Samples/trace           : {samples_in_trace}" + "\n"
         sumary_txt += f"Sample interval         : {sample_interval} µs" + "\n"
-        sumary_txt += f"Record length           : {record_length:,.0f} ms" + "\n"
+        sumary_txt += f"Record length           : {record_length:.0f} ms" + "\n"
         sumary_txt += "\n"
         # ===============================================
         sumary_txt += "TRACE RANGE" + "\n"

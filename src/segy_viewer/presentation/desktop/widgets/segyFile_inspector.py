@@ -23,6 +23,7 @@ Histórico:
        21/08/2026 - Início da criação das tabelas das abas Bin Header e Trace Header
        27/08/2026 - Finalização das funcionalidades da aba Text Header
        28/08/2026 - Melhoras e novas funcionalidades e padronização das abas de Texto
+       01/09/2026 - Inclusão de um signal quando muda de tab na tela
 ===============================================================================
 """
 from pathlib import Path
@@ -30,8 +31,6 @@ from PySide6.QtCore import Signal, Qt, QSize, Slot
 from PySide6.QtGui import QFontDatabase, QTextOption, QIcon, QPalette
 from PySide6.QtWidgets import (QWidget, QTabWidget, QVBoxLayout, QPlainTextEdit,
                                QStatusBar, QTableView, QHeaderView, QPushButton, QFileDialog, QMessageBox, QLabel)
-from pygments.lexers import _css_builtins
-
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.application.dto import SegyFileInspectionDTO, CheckResponseDto
 from segy_viewer.application.types import InspectorSectionType
@@ -49,6 +48,7 @@ _NIGHT_THEME_ICO = _BASE_DIR / "resources" / "icons" / "night.png"
 class SegyFileInspector(QWidget):
     segy_inspector_empty = Signal()  # Signal emitido o inspector está vázio
     segy_inspector_has_data = Signal()
+    segy_inspector_tab_changed = Signal(str)
 
     def __init__(self,
                  inspector_use_cases: SegyFileInspectorUseCases,
@@ -71,6 +71,7 @@ class SegyFileInspector(QWidget):
         self._tabs.addTab(self._tab_text_header, InspectorSectionType.TEXT_HEADER)
         self._tabs.addTab(self._tab_bin_header, InspectorSectionType.BIN_HEADER)
         self._tabs.addTab(self._tab_trace_header, InspectorSectionType.TRACE_HEADER)
+        self._tabs.tabBarClicked.connect(self._emit_tab_changed_signal)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -90,6 +91,9 @@ class SegyFileInspector(QWidget):
         else:
             self._fill_tabs_with_dto()
 
+    @property
+    def section_type(self) -> InspectorSectionType:
+        return InspectorSectionType
 # =======================================================================
 
     def clear_tabs_content(self):
@@ -301,6 +305,10 @@ class SegyFileInspector(QWidget):
 
         return _table_view
 
+    @Slot(int)
+    def _emit_tab_changed_signal(self,index:int)->None:
+        tab_text = self._tabs.tabText(index)
+        self.segy_inspector_tab_changed.emit(tab_text)
 
     @Slot()
     def _change_text_edit_theme(self, text_view: QPlainTextEdit, theme_button : QPushButton, enabled: bool):
@@ -345,21 +353,13 @@ class SegyFileInspector(QWidget):
     @Slot()
     def _export_dto_content(self, section_name:InspectorSectionType):
         _file_name = self.segy_path.stem
-        if section_name == InspectorSectionType.SUMMARY:
-            _file_name +=  "_SUMMARY"
+        _file_name += "_" + section_name.value.replace(" ", "_")
+
+        if section_name in (InspectorSectionType.SUMMARY, InspectorSectionType.TEXT_HEADER):
             _file_filter=self.use_cases.export_segy_dto.TXT_FILTER
 
-        elif section_name == InspectorSectionType.TEXT_HEADER:
-            _file_name +=  "_TEXT_HEADER"
-            _file_filter = self.use_cases.export_segy_dto.TXT_FILTER
-
-        elif section_name == InspectorSectionType.BIN_HEADER:
-            _file_name += "_BIN_HEADER"
+        elif section_name in (InspectorSectionType.BIN_HEADER, InspectorSectionType.TRACE_HEADER):
             _file_filter = self.use_cases.export_segy_dto.DICT_FILE_FILTERS
-
-        elif section_name == InspectorSectionType.TRACE_HEADER:
-           _file_name += "_TRACE_HEADER"
-           _file_filter = self.use_cases.export_segy_dto.DICT_FILE_FILTERS
 
         _file_path = str(self.segy_path.parent / _file_name)
         _file_path, selected_filter = QFileDialog.getSaveFileName(self,
