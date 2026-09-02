@@ -23,6 +23,7 @@ from setuptools.command.setopt import config_file
 from segy_viewer import AppConfig
 from segy_viewer.presentation.desktop import MainWindow
 from segy_viewer.presentation.desktop.widgets import SegyFileInspector, SegyFileBrowser
+from segy_viewer.presentation.desktop.tools import SegyTools
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.infrastructure.segy import SegyFile
 
@@ -34,8 +35,6 @@ def create_application():
     #CONFIG
     config = AppConfig()
     segy_extensions = config.segy_extensions
-    button_style = config.button_style
-    tree_style = config.tree_browser_style
     inspec_status_bar_button_style = AppConfig.status_bar_button_style
 
     #USE CASES
@@ -46,11 +45,13 @@ def create_application():
                                             status_bar_button_style = inspec_status_bar_button_style)
 
     segy_file_browser = SegyFileBrowser(segy_extensions = segy_extensions,
-                                        button_style = button_style,
-                                        tree_style = tree_style)
+                                        config=config)
 
     # Main Window
-    main_window = MainWindow(file_browser = segy_file_browser,
+    main_window_tools = SegyTools()
+    main_window = MainWindow(config = config,
+                             tools = main_window_tools,
+                             file_browser = segy_file_browser,
                              file_inspector = segy_file_inspector
                              )
 

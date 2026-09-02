@@ -16,10 +16,13 @@ Histórico:
 """
 
 from pathlib import Path
+from typing import Protocol
 from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtGui import QAction, QIcon, QKeySequence
-from PySide6.QtWidgets import QMainWindow, QSplitter, QStatusBar, QLabel, QToolBar, QComboBox
-from segy_viewer.presentation.desktop.widgets import SegyFileBrowser, SegyFileInspector
+from PySide6.QtWidgets import (QMainWindow, QSplitter, QStatusBar,
+                               QLabel, QToolBar, QComboBox, QMessageBox,
+                               QWidget, QDialog)
+from segy_viewer import AppConfig
 
 _BASE_DIR = Path(__file__).resolve().parents[5]
 _ICON_OPEN_FOLDER = _BASE_DIR / "resources" / "icons" / "open_folder.ico"
@@ -31,14 +34,27 @@ _TOOL_JDC_ICON = _BASE_DIR / "resources" / "icons" / "julian_day.png"
 _TOOL_SIZE_CALC_ICON = _BASE_DIR / "resources" / "icons" / "segyfilesizecalculator.png"
 _EXIT_ICON = _BASE_DIR / "resources" / "icons" / "exit.png"
 
-class MainWindow(QMainWindow):
+class ToolFactory(Protocol):
+    def __call__(self, parent: QWidget | None = None) -> QDialog:
+        ...
 
+class MainWindowTools(Protocol):
+    julian_day_calendar: ToolFactory
+    hash_md5: ToolFactory
+    file_size_calculator: ToolFactory
+
+
+class MainWindow(QMainWindow):
     def __init__(self,
-                 file_browser: SegyFileBrowser,
-                 file_inspector: SegyFileInspector,
+                 config: AppConfig,
+                 tools: MainWindowTools,
+                 file_browser: QWidget,
+                 file_inspector: QWidget,
                  parent=None):
         super().__init__(parent)
 
+        self._config = config
+        self._tools = tools
         self._file_browser = file_browser
         self._file_inspector = file_inspector
 
@@ -116,15 +132,24 @@ class MainWindow(QMainWindow):
         self._binary_header_action = QAction("Binary Header", self)
         self._trace_header_action = QAction("Trace Header", self)
         # -------------------------
-        self._data_window_action = QAction(QIcon(str(_DATA_WINDOW_ICON)),"Seismic Data window", self, toolTip="Show Seismic Data window")
+        self._data_window_action = QAction(QIcon(str(_DATA_WINDOW_ICON)),"Seismic Data window", self,
+                                           toolTip="Show Seismic Data window")
         self._data_window_action.setStatusTip("Show Seismic Data window ")
         self._data_window_action.setShortcut(QKeySequence("Ctrl+W"))
 
         # -------------------------
         # Tools
-        self._julian_day_action = QAction(QIcon(str(_TOOL_JDC_ICON)),"Julian day calendar", self)
-        self._md5_action = QAction(QIcon(str(_TOOL_MD5_ICON)),"MD5", self)
-        self._file_size_calculator_action = QAction(QIcon(str(_TOOL_SIZE_CALC_ICON)),"Segy file size calculator", self)
+        self._julian_day_action = QAction(QIcon(str(_TOOL_JDC_ICON)),"Julian day calendar", self,
+                                          toolTip="Julian day calendar window")
+        self._julian_day_action.setStatusTip("Julian day calendar window")
+
+        self._md5_action = QAction(QIcon(str(_TOOL_MD5_ICON)),"Hash MD5", self,
+                                   toolTip="Hash MD5 tool")
+        self._md5_action.setStatusTip("Hash MD5 tool")
+
+        self._file_size_calculator_action = QAction(QIcon(str(_TOOL_SIZE_CALC_ICON)),"Segy file size calculator", self,
+                                                    toolTip="Segy file size calculator tool")
+        self._file_size_calculator_action.setStatusTip("Segy file size calculator tool")
 
         # -------------------------
         # Help
@@ -179,8 +204,8 @@ class MainWindow(QMainWindow):
     def _create_tool_bar(self) -> None:
         self._main_tool_bar = QToolBar("Main Toolbar", self)
         self._main_tool_bar.setMovable(True)
+        self._main_tool_bar.setStyleSheet(self._config.tool_bar_style)
         self._main_tool_bar.setIconSize(QSize(96, 32))
-        self.addToolBar(self._main_tool_bar)
 
         self._section_view_export_combo = QComboBox()
         for section in self._file_inspector.section_type:
@@ -192,22 +217,23 @@ class MainWindow(QMainWindow):
         view_expor_button = self._main_tool_bar.widgetForAction(self._export_info_action)
         view_expor_button.setFixedWidth(40)
         self._main_tool_bar.addSeparator()
-
         self._main_tool_bar.addAction(self._data_window_action)
-        data_window_button = self._main_tool_bar.widgetForAction(self._data_window_action)
-        data_window_button.setFixedWidth(100)
         self._main_tool_bar.addSeparator()
 
+        self.addToolBar(self._main_tool_bar)
+
         self._tools_tool_bar = QToolBar("Tools Toolbar", self)
+        self._tools_tool_bar.setStyleSheet(self._config.tool_bar_style)
         self._tools_tool_bar.setMovable(True)
         self._tools_tool_bar.setIconSize(QSize(32, 32))
-        self.addToolBar(self._tools_tool_bar)
 
         self._tools_tool_bar.addSeparator()
         self._tools_tool_bar.addAction(self._julian_day_action)
         self._tools_tool_bar.addAction(self._md5_action)
         self._tools_tool_bar.addAction(self._file_size_calculator_action)
         self._tools_tool_bar.addSeparator()
+
+        self.addToolBar(Qt.RightToolBarArea, self._tools_tool_bar)
 
     def _connect_signals(self) -> None:
         # Browser -> MainWindow
@@ -237,6 +263,12 @@ class MainWindow(QMainWindow):
         self._binary_header_action.triggered.connect(self._file_inspector.show_binary_header)
         self._trace_header_action.triggered.connect(self._file_inspector.show_trace_header)
         self._section_view_export_combo.currentTextChanged.connect(self._on_section_changed)
+        self._data_window_action.triggered.connect(self._show_seismic_window)
+
+        #Tools actions
+        self._julian_day_action.triggered.connect(self._show_julian_day_calendar_tool)
+        self._md5_action.triggered.connect(self._show_hash_md5_tool)
+        self._file_size_calculator_action.triggered.connect(self._show_file_size_calculator_tool)
 
 
     @Slot(str)
@@ -281,7 +313,6 @@ class MainWindow(QMainWindow):
 
     @Slot(Path)
     def _on_directory_changed(self, path: Path) -> None:
-        # self.statusBar().showMessage(f"Directory: {path}")
         self._file_status_label.setText(f"Directory: {path}")
         self._file_inspector.clear_tabs_content()
 
@@ -292,6 +323,31 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_inspector_empty(self) -> None:
         self._set_segy_actions_enabled(False)
+
+    @Slot()
+    def _show_seismic_window(self):
+        QMessageBox.information(self,"Watch out, the oven is hot.", "The seismic window is already baking in the oven.")
+
+    @Slot()
+    def _show_julian_day_calendar_tool(self) -> None:
+        self._julian_day_calendar_window = self._tools.julian_day_calendar(parent=self)
+        self._julian_day_calendar_window.show()
+        self._julian_day_calendar_window.raise_()
+        self._julian_day_calendar_window.activateWindow()
+
+    @Slot()
+    def _show_hash_md5_tool(self):
+        self._hash_md5_window = self._tools.hash_md5(parent=self)
+        self._hash_md5_window.show()
+        self._hash_md5_window.raise_()
+        self._hash_md5_window.activateWindow()
+
+    @Slot()
+    def _show_file_size_calculator_tool(self):
+        self._file_size_calculator_window = self._tools.file_size_calculator(parent=self)
+        self._file_size_calculator_window.show()
+        self._file_size_calculator_window.raise_()
+        self._file_size_calculator_window.activateWindow()
 
     def _set_segy_actions_enabled(self, enabled: bool) -> None:
         self._export_info_action.setEnabled(enabled)

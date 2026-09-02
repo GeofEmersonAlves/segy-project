@@ -31,6 +31,7 @@ from PySide6.QtCore import (QFileInfo, QDir, Slot,  QSettings, Signal,
                             QItemSelection, QStandardPaths, QSize, Qt)
 from PySide6.QtGui import QIcon
 from pathlib import Path
+from segy_viewer import AppConfig, config
 
 _BASE_DIR = Path(__file__).resolve().parents[5]
 _ICONS_DIR = _BASE_DIR / "resources" / "icons"
@@ -64,11 +65,11 @@ class SegyFileBrowser(QWidget):
     file_selected = Signal(Path)  #Signal emitido quando o usuário clica em um arquivo
     path_changed = Signal(Path)   #Signal emitido quando o usuário muda a pasta
 
-    def __init__(self, segy_extensions: tuple[str, ...], button_style: str, tree_style:str , parent=None):
+    def __init__(self, segy_extensions: tuple[str, ...], config: AppConfig , parent=None):
         super().__init__(parent)
 
         self._settings = QSettings("SegyViewer", "SegyViewer")
-        self._button_style = button_style
+        self._button_style = config.button_style
         self._segy_extensions = segy_extensions
         self.model = QFileSystemModel(self)
 
@@ -97,7 +98,7 @@ class SegyFileBrowser(QWidget):
 
         self.tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tree.setStyleSheet(tree_style)
+        self.tree.setStyleSheet(config.tree_browser_style)
 
         self.tree.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.tree.doubleClicked.connect(self._on_double_clicked)

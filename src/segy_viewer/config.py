@@ -90,7 +90,56 @@ class AppConfig:
                                 color: white;
                             }
                         """
-
+    combo_box_style = """
+                        QComboBox {
+                            background-color: white;
+                            border: 1px solid #909090;
+                            padding: 3px 6px;
+                            min-width: 150px;
+                        }
+                    
+                        QComboBox:hover {
+                            border: 1px solid #507f9d;
+                        }
+                    
+                        QComboBox::drop-down {
+                            width: 24px;
+                            border-left: 1px solid #b0b0b0;
+                        }
+                    """
+    tool_bar_style = """
+                        QToolBar {
+                            background-color: #eaf5fc;
+                            border: none;
+                            spacing: 4px;
+                            padding: 2px;
+                        }
+                    
+                        QToolBar QToolButton {
+                            border: 1px solid transparent;
+                            border-radius: 3px;
+                            padding: 3px;
+                        }
+                    
+                        QToolBar QToolButton:hover {
+                            background-color: #c5dceb;
+                            border: 1px solid #8aa9bd;
+                        }
+                    
+                        QToolBar QToolButton:pressed {
+                            background-color: #aecbdd;
+                        }
+                    
+                        QToolBar QToolButton:disabled {
+                            background-color: transparent;
+                        }
+                    
+                        QToolBar::separator {
+                            width: 1px;
+                            margin: 4px 6px;
+                            background-color: #8a8a8a;
+                        }
+                    """
     # -quantidade inicial de traces para visualização
     # -diretório de logs
     # -limites de cache
