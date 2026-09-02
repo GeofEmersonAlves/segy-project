@@ -23,16 +23,17 @@ from PySide6.QtWidgets import (QMainWindow, QSplitter, QStatusBar,
                                QLabel, QToolBar, QComboBox, QMessageBox,
                                QWidget, QDialog)
 from segy_viewer import AppConfig
+from segy_viewer.resources import resource_path
 
-_BASE_DIR = Path(__file__).resolve().parents[5]
-_ICON_OPEN_FOLDER = _BASE_DIR / "resources" / "icons" / "open_folder.ico"
-_ICON_REFRESH_BUTTON= _BASE_DIR / "resources" / "icons" / "reload_folder.ico"
-_EXPORT_ICON = _BASE_DIR / "resources" / "icons" / "export.png"
-_DATA_WINDOW_ICON = _BASE_DIR / "resources" / "icons" / "seismicWindow.png"
-_TOOL_MD5_ICON = _BASE_DIR / "resources" / "icons" / "MD5Tools.png"
-_TOOL_JDC_ICON = _BASE_DIR / "resources" / "icons" / "julian_day.png"
-_TOOL_SIZE_CALC_ICON = _BASE_DIR / "resources" / "icons" / "segyfilesizecalculator.png"
-_EXIT_ICON = _BASE_DIR / "resources" / "icons" / "exit.png"
+
+_ICON_OPEN_FOLDER = resource_path("resources/icons/open_folder.ico")
+_ICON_REFRESH_BUTTON= resource_path("resources/icons/reload_folder.ico")
+_EXPORT_ICON = resource_path("resources/icons/export.png")
+_DATA_WINDOW_ICON = resource_path("resources/icons/seismicWindow.png")
+_TOOL_MD5_ICON = resource_path("resources/icons/MD5Tools.png")
+_TOOL_JDC_ICON = resource_path("resources/icons/julian_day.png")
+_TOOL_SIZE_CALC_ICON = resource_path("resources/icons/segyfilesizecalculator.png")
+_EXIT_ICON = resource_path("resources/icons/exit.png")
 
 class ToolFactory(Protocol):
     def __call__(self, parent: QWidget | None = None) -> QDialog:
@@ -350,17 +351,16 @@ class MainWindow(QMainWindow):
         self._file_size_calculator_window.activateWindow()
 
     def _set_segy_actions_enabled(self, enabled: bool) -> None:
+        if not enabled:
+            self._section_view_export_combo.setCurrentIndex(0)
         self._export_info_action.setEnabled(enabled)
-        self._section_view_export_combo.setCurrentIndex(0)
         self._section_view_export_combo.setEnabled(enabled)
         self._export_summary_action.setEnabled(enabled)
         self._export_text_header_action.setEnabled(enabled)
         self._export_binary_header_action.setEnabled(enabled)
         self._export_trace_header_action.setEnabled(enabled)
-
         self._summary_action.setEnabled(enabled)
         self._text_header_action.setEnabled(enabled)
         self._binary_header_action.setEnabled(enabled)
         self._trace_header_action.setEnabled(enabled)
-
         self._data_window_action.setEnabled(enabled)

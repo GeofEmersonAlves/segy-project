@@ -19,13 +19,14 @@ Histórico:
 """
 import sys
 from pathlib import Path
-
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from segy_viewer.bootstrap import create_application
+from segy_viewer.resources import resource_path
 from segy_viewer import __version__
+
 _BASE_DIR = Path(__file__).resolve().parents[2]
-_APP_ICON = _BASE_DIR / "resources" / "icons" / "segyFile.ico"
+_APP_ICON = resource_path("resources/icons/segyFile.ico")
 
 def main() -> int:
     app = QApplication(sys.argv)

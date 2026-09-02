@@ -18,9 +18,10 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
+from segy_viewer.resources import resource_path
 
-_BASE_DIR = Path(__file__).resolve().parents[6]
-_UNDER_CONSTRUCTION_IMG = _BASE_DIR / "resources" / "images" / "under_construction.png"
+_UNDER_CONSTRUCTION_IMG = resource_path("resources/images/under_construction.png")
+
 class JulianDayCalendarWindow(QDialog):
 
     def __init__(self, parent=None):

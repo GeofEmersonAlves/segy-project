@@ -35,15 +35,15 @@ from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.application.dto import SegyFileInspectionDTO, CheckResponseDto
 from segy_viewer.application.types import InspectorSectionType
 from segy_viewer.presentation.desktop.model import BinaryTraceHeaderTableModel
+from segy_viewer.resources import resource_path
 
-_BASE_DIR = Path(__file__).resolve().parents[5]
-_WHITESPACE_ICO = _BASE_DIR / "resources" / "icons" / "withespace.png"
-_EXPORT_ICO = _BASE_DIR / "resources" / "icons" / "export.png"
-_IMPORT_TEXT_HEADER_ICO = _BASE_DIR / "resources" / "icons" / "import.png"
-_RESET_TEXT_HEADER_ICO = _BASE_DIR / "resources" / "icons" / "reset.png"
-_UPDATE_TEXT_HEADER_ICO = _BASE_DIR / "resources" / "icons" / "update.png"
-_DAY_THEME_ICO =   _BASE_DIR / "resources" / "icons" / "day.png"
-_NIGHT_THEME_ICO = _BASE_DIR / "resources" / "icons" / "night.png"
+_WHITESPACE_ICO = resource_path("resources/icons/withespace.png")
+_EXPORT_ICO = resource_path("resources/icons/export.png")
+_IMPORT_TEXT_HEADER_ICO = resource_path("resources/icons/import.png")
+_RESET_TEXT_HEADER_ICO = resource_path("resources/icons/reset.png")
+_UPDATE_TEXT_HEADER_ICO = resource_path("resources/icons/update.png")
+_DAY_THEME_ICO =   resource_path("resources/icons/day.png")
+_NIGHT_THEME_ICO = resource_path("resources/icons/night.png")
 
 class SegyFileInspector(QWidget):
     segy_inspector_empty = Signal()  # Signal emitido o inspector está vázio
@@ -62,12 +62,12 @@ class SegyFileInspector(QWidget):
         self._status_bar_button_style = status_bar_button_style
 
         self._tabs = QTabWidget() #Cria o wigdget tabs
-        self._tab_sumary: QWidget= self._tab_factory(InspectorSectionType.SUMMARY)
+        self._tab_summary: QWidget= self._tab_factory(InspectorSectionType.SUMMARY)
         self._tab_text_header: QWidget= self._tab_factory(InspectorSectionType.TEXT_HEADER)
         self._tab_bin_header: QWidget = self._tab_factory(InspectorSectionType.BIN_HEADER)
         self._tab_trace_header: QWidget = self._tab_factory(InspectorSectionType.TRACE_HEADER)
 
-        self._tabs.addTab(self._tab_sumary, InspectorSectionType.SUMMARY)
+        self._tabs.addTab(self._tab_summary, InspectorSectionType.SUMMARY)
         self._tabs.addTab(self._tab_text_header, InspectorSectionType.TEXT_HEADER)
         self._tabs.addTab(self._tab_bin_header, InspectorSectionType.BIN_HEADER)
         self._tabs.addTab(self._tab_trace_header, InspectorSectionType.TRACE_HEADER)
@@ -103,14 +103,7 @@ class SegyFileInspector(QWidget):
        self._text_header.setPlainText("")
        self._bin_headers_table_model.set_data(data={})
        self._trace_header_table_model.set_data(data={})
-
-       #Esconde as abas deixando somente summary visivel
-       # Esconde os botoes de reset e update
-       self._hide_show_text_header_buttons(is_visible=False)
-       self._tabs.setTabVisible(1, False)
-       self._tabs.setTabVisible(2, False)
-       self._tabs.setTabVisible(3, False)
-
+       self._hide_show_tabs_content(is_visible=False)
        self.segy_inspector_empty.emit()
 
     def export_summary(self):
@@ -130,16 +123,27 @@ class SegyFileInspector(QWidget):
 
     def show_summary(self) :
         self._tabs.setCurrentIndex(0)
+        self._emit_tab_changed_signal(0)
 
     def show_text_header(self) :
         self._tabs.setCurrentIndex(1)
+        self._emit_tab_changed_signal(1)
 
     def show_binary_header(self) :
         self._tabs.setCurrentIndex(2)
+        self._emit_tab_changed_signal(2)
 
     def show_trace_header(self) :
         self._tabs.setCurrentIndex(3)
+        self._emit_tab_changed_signal(3)
+
 # =======================================================================
+    def _hide_show_tabs_content(self, is_visible: bool) -> None:
+        self._hide_show_text_header_buttons(is_visible=is_visible)
+        self._tabs.setTabVisible(1, is_visible)
+        self._tabs.setTabVisible(2, is_visible)
+        self._tabs.setTabVisible(3, is_visible)
+
     def _fill_tabs_with_dto(self):
         inspetion_dto: SegyFileInspectionDTO = self.use_cases.inspect_segy_file.execute(self._segy_path)
         self._inspetion_dto = inspetion_dto
@@ -150,12 +154,9 @@ class SegyFileInspector(QWidget):
         self._trace_header_table_model.set_data(data=inspetion_dto.trace_header)
 
         # Mostra todas as abas
-        self._tabs.setTabVisible(1, True)
-        self._tabs.setTabVisible(2, True)
-        self._tabs.setTabVisible(3, True)
+        self._hide_show_tabs_content(is_visible=True)
         #Esconde os botoes de reset e update
         self._hide_show_text_header_buttons(is_visible=False)
-
         self.segy_inspector_has_data.emit()
 
     def _tab_factory(self, section_name: InspectorSectionType) -> QWidget:
@@ -323,8 +324,6 @@ class SegyFileInspector(QWidget):
             theme_button.setIcon(QIcon(str(_NIGHT_THEME_ICO)))
         else:
             theme_button.setIcon(QIcon(str(_DAY_THEME_ICO)))
-
-
 
     @Slot()
     def _update_text_header_status_bar(self, text_view: QPlainTextEdit, text_label: QLabel) -> None:

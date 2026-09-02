@@ -31,16 +31,15 @@ from PySide6.QtCore import (QFileInfo, QDir, Slot,  QSettings, Signal,
                             QItemSelection, QStandardPaths, QSize, Qt)
 from PySide6.QtGui import QIcon
 from pathlib import Path
-from segy_viewer import AppConfig, config
+from segy_viewer import AppConfig
+from segy_viewer.resources import resource_path
 
-_BASE_DIR = Path(__file__).resolve().parents[5]
-_ICONS_DIR = _BASE_DIR / "resources" / "icons"
-_SEGY_ICON = _ICONS_DIR / "segyFile.ico"
-_ICON_UP_BUTTON = _ICONS_DIR / "folder_up.ico"
-_ICON_OPEN_FOLDER = _ICONS_DIR / "open_folder.ico"
-_ICON_SORT_BUTTON1 = _ICONS_DIR / "sort_AZ.ico"
-_ICON_SORT_BUTTON2 = _ICONS_DIR / "sort_019.ico"
-_ICON_REFRESH_BUTTON = _ICONS_DIR / "reload_folder.ico"
+_SEGY_ICON = resource_path("resources/icons/segyFile.ico")
+_ICON_UP_BUTTON = resource_path("resources/icons/folder_up.ico")
+_ICON_OPEN_FOLDER = resource_path("resources/icons/open_folder.ico")
+_ICON_SORT_BUTTON1 = resource_path("resources/icons/sort_AZ.ico")
+_ICON_SORT_BUTTON2 = resource_path("resources/icons/sort_019.ico")
+_ICON_REFRESH_BUTTON = resource_path("resources/icons/reload_folder.ico")
 
 #==================================================
 class _SegyFileIconProvider(QFileIconProvider):
