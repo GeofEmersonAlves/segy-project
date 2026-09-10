@@ -68,7 +68,7 @@ class SegyFileBrowser(QWidget):
         super().__init__(parent)
 
         self._settings = QSettings("SegyViewer", "SegyViewer")
-        self._button_style = config.button_style
+        self._button_style = config.BUTTON_STYLE
         self._segy_extensions = segy_extensions
         self.model = QFileSystemModel(self)
 
@@ -97,7 +97,7 @@ class SegyFileBrowser(QWidget):
 
         self.tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tree.setStyleSheet(config.tree_browser_style)
+        self.tree.setStyleSheet(config.TREE_BROWSER_STYLE)
 
         self.tree.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.tree.doubleClicked.connect(self._on_double_clicked)

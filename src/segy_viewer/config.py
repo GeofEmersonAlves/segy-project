@@ -22,17 +22,17 @@ Histórico:
 """
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class AppConfig:
-    app_name: str = "SEG-Y Viewer" #Nome da aplicação
-    app_version: str = "1.0.0"     #Versão
+    app_version: str = "0.5.0-alpha"
+    app_name: str = f"Segy Viewer (Version {app_version})"
     app_author: str = "Emerson Alves da Silva"
     app_theme = ""
-
     segy_extensions: tuple[str, ...] = (".sgy", ".segy") #Extensões SEG-Y reconhecidas
 
     default_trace_block_size: int = 500  # Tamanho inicial da janela, ainda precisa ajustar,
-    button_style = """
+    BUTTON_STYLE = """
                         QPushButton {
                             border: 1px solid #cfcfcf;
                             border-radius: 4px;
@@ -50,7 +50,7 @@ class AppConfig:
                         }
                     """
 
-    status_bar_button_style = """
+    STATUS_BAR_BUTTON_STYLE = """
                                 QPushButton {
                                     border: 1px solid transparent;
                                     border-radius: 3px;
@@ -79,7 +79,7 @@ class AppConfig:
                                 }
                             """
 
-    tree_browser_style = """
+    TREE_BROWSER_STYLE = """
                             QTreeView::item:selected {
                                 background-color: #0078D7;
                                 color: white;
@@ -90,7 +90,7 @@ class AppConfig:
                                 color: white;
                             }
                         """
-    combo_box_style = """
+    COMBO_BOX_STYLE = """
                         QComboBox {
                             background-color: white;
                             border: 1px solid #909090;
@@ -107,7 +107,7 @@ class AppConfig:
                             border-left: 1px solid #b0b0b0;
                         }
                     """
-    tool_bar_style = """
+    TOOL_BAR_STYLE = """
                         QToolBar {
                             background-color: #eaf5fc;
                             border: none;
@@ -140,6 +140,65 @@ class AppConfig:
                             background-color: #8a8a8a;
                         }
                     """
+    SEISMIC_DATA_WINDOW_TOOL_BAR_STYLE = """
+                                        QToolBar {
+                                            spacing: 1px;
+                                            padding: 1px;
+                                        }
+                            
+                                        QToolButton {
+                                            padding: 1px;
+                                            margin: 0px;
+                                        }
+                                        """
+    SEISMIC_SCROLLBAR_STYLE = """
+                                     QScrollBar:horizontal {
+                                        background: #eeeeee;
+                                        height: 30px;
+                                        margin: 0px 30px 0px 30px;
+                                        border: 1px solid #b8b8b8;
+                                    }
+                                
+                                    QScrollBar::handle:horizontal {
+                                        background: #a8a8a8;
+                                        min-width: 60px;
+                                        border: 1px solid #777777;
+                                        border-radius: 3px;
+                                    }
+                                
+                                    QScrollBar::handle:horizontal:hover {
+                                        background: #909090;
+                                    }
+                                
+                                    QScrollBar::handle:horizontal:pressed {
+                                        background: #787878;
+                                    }
+                                
+                                    QScrollBar::add-line:horizontal {
+                                        background: #dddddd;
+                                        width: 29px;
+                                        subcontrol-position: right;
+                                        subcontrol-origin: margin;
+                                        border: 1px solid #aaaaaa;
+                                    }
+                                
+                                    QScrollBar::sub-line:horizontal {
+                                        background: #dddddd;
+                                        width: 29px;
+                                        subcontrol-position: left;
+                                        subcontrol-origin: margin;
+                                        border: 1px solid #aaaaaa;
+                                    }
+                                
+                                    QScrollBar::add-page:horizontal {
+                                        background: #eeeeee;
+                                    }
+                                
+                                    QScrollBar::sub-page:horizontal {
+                                        background: #eeeeee;
+                                    }
+                                """
+
     # -quantidade inicial de traces para visualização
     # -diretório de logs
     # -limites de cache

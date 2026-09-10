@@ -17,9 +17,6 @@ Histórico:
 ===============================================================================
 """
 from pathlib import Path
-
-from setuptools.command.setopt import config_file
-
 from segy_viewer import AppConfig
 from segy_viewer.presentation.desktop import MainWindow
 from segy_viewer.presentation.desktop.widgets import SegyFileInspector, SegyFileBrowser
@@ -35,7 +32,7 @@ def create_application():
     #CONFIG
     config = AppConfig()
     segy_extensions = config.segy_extensions
-    inspec_status_bar_button_style = AppConfig.status_bar_button_style
+    inspec_status_bar_button_style = AppConfig.STATUS_BAR_BUTTON_STYLE
 
     #USE CASES
     inspector_use_cases = SegyFileInspectorUseCases(file_factory = create_segy_file)

@@ -16,7 +16,7 @@ def _on_path_changed(path: Path):
 if __name__ == "__main__":
     config = AppConfig()
     segy_extensions = config.segy_extensions
-    button_style = config.button_style
+    button_style = config.BUTTON_STYLE
     app = QApplication(sys.argv)
 
     segy_browser = SegyFileBrowser(segy_extensions, button_style)

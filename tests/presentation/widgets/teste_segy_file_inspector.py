@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     use_cases = SegyFileInspectorUseCases(file_factory=create_segy_file)
-    status_bar_button_style = AppConfig.status_bar_button_style
+    status_bar_button_style = AppConfig.STATUS_BAR_BUTTON_STYLE
 
     segy_inspector = SegyFileInspector(inspector_use_cases=use_cases, status_bar_button_style=status_bar_button_style)
     segy_inspector.segy_inspector_empty.connect(inspector_is_empty)

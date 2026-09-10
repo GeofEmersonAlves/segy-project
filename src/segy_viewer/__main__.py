@@ -21,18 +21,18 @@ import sys
 from pathlib import Path
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
+from segy_viewer import AppConfig
 from segy_viewer.bootstrap import create_application
 from segy_viewer.resources import resource_path
-from segy_viewer import __version__
 
 _BASE_DIR = Path(__file__).resolve().parents[2]
-_APP_ICON = resource_path("resources/icons/segyFile.ico")
+_APP_ICON = resource_path("resources/images/segy_viewer.png")
 
 def main() -> int:
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon(str(_APP_ICON)))
 
-    app_name = f"Segy Viewer (Version {__version__})"
+    app_name = AppConfig.app_name
     app.setApplicationName(app_name)
     app.setApplicationDisplayName(app_name)
     app.setOrganizationName(app_name)

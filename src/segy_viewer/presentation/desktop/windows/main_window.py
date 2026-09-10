@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (QMainWindow, QSplitter, QStatusBar,
                                QLabel, QToolBar, QComboBox, QMessageBox,
                                QWidget, QDialog)
 from segy_viewer import AppConfig
+from segy_viewer.application.use_cases import SegyFileInspectorUseCases
+from segy_viewer.presentation.desktop.windows import SeismicDataWindow
 from segy_viewer.resources import resource_path
 
 
@@ -56,8 +58,11 @@ class MainWindow(QMainWindow):
 
         self._config = config
         self._tools = tools
+        self._segy_path: Path | None = None
         self._file_browser = file_browser
         self._file_inspector = file_inspector
+
+        self._seismic_windows: list[SeismicDataWindow] = []
 
         self.resize(1200, 750)
 
@@ -71,6 +76,14 @@ class MainWindow(QMainWindow):
         # Estado inicial
         self._file_inspector.clear_tabs_content()
         self._set_segy_actions_enabled(False)
+
+    def closeEvent(self, event):
+        for window in tuple(self._seismic_windows):
+            window.close()
+        self._seismic_windows.clear()
+
+        super().closeEvent(event)
+        event.accept()
 
     def _create_central_widget(self) -> None:
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -205,7 +218,7 @@ class MainWindow(QMainWindow):
     def _create_tool_bar(self) -> None:
         self._main_tool_bar = QToolBar("Main Toolbar", self)
         self._main_tool_bar.setMovable(True)
-        self._main_tool_bar.setStyleSheet(self._config.tool_bar_style)
+        self._main_tool_bar.setStyleSheet(self._config.TOOL_BAR_STYLE)
         self._main_tool_bar.setIconSize(QSize(96, 32))
 
         self._section_view_export_combo = QComboBox()
@@ -224,7 +237,7 @@ class MainWindow(QMainWindow):
         self.addToolBar(self._main_tool_bar)
 
         self._tools_tool_bar = QToolBar("Tools Toolbar", self)
-        self._tools_tool_bar.setStyleSheet(self._config.tool_bar_style)
+        self._tools_tool_bar.setStyleSheet(self._config.TOOL_BAR_STYLE)
         self._tools_tool_bar.setMovable(True)
         self._tools_tool_bar.setIconSize(QSize(32, 32))
 
@@ -264,7 +277,7 @@ class MainWindow(QMainWindow):
         self._binary_header_action.triggered.connect(self._file_inspector.show_binary_header)
         self._trace_header_action.triggered.connect(self._file_inspector.show_trace_header)
         self._section_view_export_combo.currentTextChanged.connect(self._on_section_changed)
-        self._data_window_action.triggered.connect(self._show_seismic_window)
+        self._data_window_action.triggered.connect(self._show_seismic_data_window)
 
         #Tools actions
         self._julian_day_action.triggered.connect(self._show_julian_day_calendar_tool)
@@ -309,11 +322,13 @@ class MainWindow(QMainWindow):
 
     @Slot(Path)
     def _on_segy_file_selected(self, path: Path) -> None:
+        self._segy_path = path
         self._file_inspector.segy_path = path
         self._file_status_label.setText(f"File: {path}")
 
     @Slot(Path)
     def _on_directory_changed(self, path: Path) -> None:
+        self._segy_path = path
         self._file_status_label.setText(f"Directory: {path}")
         self._file_inspector.clear_tabs_content()
 
@@ -326,9 +341,16 @@ class MainWindow(QMainWindow):
         self._set_segy_actions_enabled(False)
 
     @Slot()
-    def _show_seismic_window(self):
-        QMessageBox.information(self,"Watch out, the oven is hot.", "The seismic window is already baking in the oven.")
+    def _show_seismic_data_window(self):
+        path = self._segy_path
+        if path is None:
+            return
 
+        seismic_window = SeismicDataWindow(path=path, config=self._config)
+        self._seismic_windows.append(seismic_window)
+        seismic_window.destroyed.connect( lambda: self._on_seismic_window_destroyed(seismic_window))
+
+        seismic_window.showMaximized()
     @Slot()
     def _show_julian_day_calendar_tool(self) -> None:
         self._julian_day_calendar_window = self._tools.julian_day_calendar(parent=self)
@@ -364,3 +386,7 @@ class MainWindow(QMainWindow):
         self._binary_header_action.setEnabled(enabled)
         self._trace_header_action.setEnabled(enabled)
         self._data_window_action.setEnabled(enabled)
+
+    def _on_seismic_window_destroyed(self, window: SeismicDataWindow):
+        if window in self._seismic_windows:
+            self._seismic_windows.remove(window)

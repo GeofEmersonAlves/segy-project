@@ -57,7 +57,7 @@ class SegyFileInspector(QWidget):
 
         super().__init__(parent)
         self.use_cases = inspector_use_cases
-        self._segy_path: Path |None = None
+        self._segy_path: Path | None = None
         self._inspetion_dto : SegyFileInspectionDTO |None = None
         self._status_bar_button_style = status_bar_button_style
 
