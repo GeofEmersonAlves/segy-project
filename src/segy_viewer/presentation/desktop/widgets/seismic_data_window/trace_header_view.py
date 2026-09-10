@@ -39,8 +39,3 @@ class TraceHeaderView(QWidget):
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
-        painter.begin(self)
-
-
-
-        painter.end()

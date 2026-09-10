@@ -26,10 +26,10 @@ Histórico:
 ===============================================================================
 """
 from pathlib import Path
-from PySide6.QtCore import Qt, Slot, QSize
+from PySide6.QtCore import Qt, Slot, QSize, QRect
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (QHBoxLayout, QMainWindow, QScrollBar, QStatusBar, QToolBar, QVBoxLayout, QWidget)
-from segy_viewer.application.seismic_window import SeismicViewport
+from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import TraceHeaderView
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import SeismicDataView
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import TraceAttributeGraphView
@@ -48,16 +48,16 @@ _MOUSE_TRACKING_OFF_TOOL_ICON = resource_path("resources/icons/mouse_tracking_of
 
 class SeismicDataWindow(QMainWindow):
     def __init__(self, path: Path,
-               # use_cases: SeismicWindowUseCases,
                  config: AppConfig,
-                 parent=None):
+                 initial_geometry: QRect | None = None):
 
-        super().__init__(parent)
+        # use_cases: SeismicWindowUseCases,
+        super().__init__(parent=None)
         self._config = config
         self._path = path
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose,True)
 
-        # Quantidade total de traços do conjunto carregado.
+               # Quantidade total de traços do conjunto carregado.
         # Isso não pertence ao viewport.
         self._total_trace_count = 0
 
@@ -83,7 +83,7 @@ class SeismicDataWindow(QMainWindow):
         self._create_status_bar()
         # self._connect_signals()
         self._configure_scrollbar()
-        self._configure_window()
+        self._configure_window(initial_geometry)
         # self._initialize_display()
 
 
@@ -177,9 +177,13 @@ class SeismicDataWindow(QMainWindow):
         self.setStatusBar(status_bar)
         status_bar.showMessage("Ready")
 
-    def _configure_window(self) -> None:
+    def _configure_window(self, initial_geometry: QRect) -> None:
         self.setWindowTitle(f"Seismic Data Window: {self._path}")
-        self.resize(1400, 850)
+
+        #A geometria inicial vem da main window, sempre abre sobre o SegyFileInspector
+        if initial_geometry is not None:
+            self.setGeometry(initial_geometry)
+
 
     def _configure_scrollbar(self) -> None:
         self._horizontal_scrollbar = QScrollBar(Qt.Orientation.Horizontal)

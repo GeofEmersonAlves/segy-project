@@ -18,7 +18,7 @@ Histórico:
 
 from dataclasses import dataclass
 
-from segy_viewer.application.seismic_window.seismic_viewport import SeismicViewport
+from segy_viewer.application.seismic_data_window.seismic_viewport import SeismicViewport
 
 @dataclass
 class SeismicDisplayState:

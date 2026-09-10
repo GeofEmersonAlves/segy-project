@@ -14,16 +14,17 @@ Histórico:
        01/09/2026 - Criação da Tool Bar
 ===============================================================================
 """
-
+import math
 from pathlib import Path
 from typing import Protocol
-from PySide6.QtCore import Qt, Slot, QSize
+from PySide6.QtCore import Qt, Slot, QSize, QRect, QPoint
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (QMainWindow, QSplitter, QStatusBar,
                                QLabel, QToolBar, QComboBox, QMessageBox,
                                QWidget, QDialog)
 from segy_viewer import AppConfig
-from segy_viewer.application.use_cases import SegyFileInspectorUseCases
+from segy_viewer.application.use_cases import inspect_segy_file
+# from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.presentation.desktop.windows import SeismicDataWindow
 from segy_viewer.resources import resource_path
 
@@ -76,11 +77,10 @@ class MainWindow(QMainWindow):
         # Estado inicial
         self._file_inspector.clear_tabs_content()
         self._set_segy_actions_enabled(False)
+        self._set_window_actions_enabled(False)
 
     def closeEvent(self, event):
-        for window in tuple(self._seismic_windows):
-            window.close()
-        self._seismic_windows.clear()
+        self._close_all_seismic_windows()
 
         super().closeEvent(event)
         event.accept()
@@ -166,6 +166,16 @@ class MainWindow(QMainWindow):
         self._file_size_calculator_action.setStatusTip("Segy file size calculator tool")
 
         # -------------------------
+        #Window
+        self._cascade_windows_action = QAction("Cascade",self)
+        self._tile_screen_action = QAction("Tile Screen", self)
+        self._tile_horizontal_action = QAction("Tile Horizontally",self)
+        self._tile_vertical_action = QAction("Tile Vertically",self)
+        self._maximize_all_windows_action = QAction("Maximize All",self)
+        self._close_all_windows_action = QAction("Close All",self)
+        self._list_seismic_windows_action = QAction("List Data Seismic Windows...",self)
+
+        # -------------------------
         # Help
         self._manual_pt_action = QAction("User Manual (Português)", self)
         self._manual_en_action = QAction("User Manual (English)", self)
@@ -205,6 +215,20 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(self._julian_day_action)
         tools_menu.addAction(self._md5_action)
         tools_menu.addAction(self._file_size_calculator_action)
+
+        # ==================================================
+        # Window
+        # ==================================================
+        window_menu = self.menuBar().addMenu("&Window")
+        window_menu.addAction(self._cascade_windows_action)
+        window_menu.addAction(self._tile_screen_action)
+        window_menu.addAction(self._tile_horizontal_action)
+        window_menu.addAction(self._tile_vertical_action)
+        window_menu.addSeparator()
+        window_menu.addAction(self._maximize_all_windows_action)
+        window_menu.addAction(self._close_all_windows_action)
+        window_menu.addSeparator()
+        window_menu.addAction(self._list_seismic_windows_action)
 
         # ==================================================
         # Help
@@ -284,6 +308,14 @@ class MainWindow(QMainWindow):
         self._md5_action.triggered.connect(self._show_hash_md5_tool)
         self._file_size_calculator_action.triggered.connect(self._show_file_size_calculator_tool)
 
+        #Window actions
+        self._cascade_windows_action.triggered.connect(self._cascade_seismic_windows)
+        self._tile_screen_action.triggered.connect(self._tile_screen)
+        self._tile_horizontal_action.triggered.connect(self._tile_seismic_windows_horizontally)
+        self._tile_vertical_action.triggered.connect(self._tile_seismic_windows_vertically)
+        self._maximize_all_windows_action.triggered.connect(self._maximize_seismic_windows)
+        self._close_all_windows_action.triggered.connect(self._close_all_seismic_windows)
+        # self._list_seismic_windows_action.triggered.connect(self._show_seismic_windows_list)
 
     @Slot(str)
     def _inspector_section_changed(self, section:str)->None:
@@ -346,11 +378,13 @@ class MainWindow(QMainWindow):
         if path is None:
             return
 
-        seismic_window = SeismicDataWindow(path=path, config=self._config)
+        geometry = self._seismic_window_geometry()
+        seismic_window = SeismicDataWindow(path=path,  initial_geometry=geometry, config=self._config)
         self._seismic_windows.append(seismic_window)
-        seismic_window.destroyed.connect( lambda: self._on_seismic_window_destroyed(seismic_window))
+        seismic_window.destroyed.connect(lambda: self._on_seismic_window_destroyed(seismic_window))
+        self._set_window_actions_enabled(True)
+        seismic_window.show()
 
-        seismic_window.showMaximized()
     @Slot()
     def _show_julian_day_calendar_tool(self) -> None:
         self._julian_day_calendar_window = self._tools.julian_day_calendar(parent=self)
@@ -372,6 +406,110 @@ class MainWindow(QMainWindow):
         self._file_size_calculator_window.raise_()
         self._file_size_calculator_window.activateWindow()
 
+    @Slot()
+    def _tile_screen(self) -> None:
+        windows = self._seismic_windows
+        if not windows:
+            return
+
+        screen = self.screen()
+        if screen is None:
+            return
+        area = screen.availableGeometry()
+        count = len(windows)
+        columns = math.ceil(math.sqrt(count))
+        rows = math.ceil(count / columns)
+        window_width = area.width() // columns
+        window_height = (area.height()-90) // rows
+
+        for index, window in enumerate(windows):
+            row = index // columns
+            column = index % columns
+            x = area.x() + column * window_width
+            y = area.y() + row * window_height
+
+            y = 80 if y < 80 else y + 90
+            window.showNormal()
+            window.setGeometry(x, y, window_width, window_height,)
+            window.raise_()
+
+        windows[-1].activateWindow()
+
+    @Slot()
+    def _close_all_seismic_windows(self) -> None:
+        for window in tuple(self._seismic_windows):
+            window.close()
+        self._seismic_windows.clear()
+        self._set_window_actions_enabled(False)
+
+    @Slot()
+    def _maximize_seismic_windows(self) -> None:
+        for window in self._seismic_windows:
+            window.showMaximized()
+            window.raise_()
+
+        self._seismic_windows[-1].activateWindow()
+
+    @Slot()
+    def _cascade_seismic_windows(self) -> None:
+        if not self._seismic_windows:
+            return
+
+        offset = 30
+        for index, window in enumerate(self._seismic_windows):
+            window.showNormal()
+            window.resize(1100, 700)
+            window.move(40 + index * offset, 40 + index * offset)
+            window.raise_()
+
+    @Slot()
+    def _tile_seismic_windows_horizontally(self) -> None:
+        if not self._seismic_windows:
+            return
+
+        screen = self.screen()
+        if screen is None:
+            return
+        area = screen.availableGeometry()
+        count = len(self._seismic_windows)
+        window_height = (area.height()-80) // count
+
+        y = area.y()
+        y = 80 if y < 80 else y
+        for index, window in enumerate(self._seismic_windows):
+            window.showNormal()
+            window.setGeometry(area.x(),
+                               y,
+                               area.width(),
+                               window_height
+                               )
+            window.raise_()
+            y += window_height
+        self._seismic_windows[-1].activateWindow()
+
+    @Slot()
+    def _tile_seismic_windows_vertically(self) -> None:
+        if not self._seismic_windows:
+            return
+        screen = self.screen()
+        if screen is None:
+            return
+        area = screen.availableGeometry()
+        count = len(self._seismic_windows)
+        window_width = area.width() // count
+        for index, window in enumerate(self._seismic_windows):
+            window.showNormal()
+            y = area.y()
+            y = 80 if y < 80 else y
+
+            window.setGeometry(area.x() + index * window_width,
+                              y,
+                              window_width,
+                              area.height()-80
+                            )
+            window.raise_()
+        self._seismic_windows[-1].activateWindow()
+
     def _set_segy_actions_enabled(self, enabled: bool) -> None:
         if not enabled:
             self._section_view_export_combo.setCurrentIndex(0)
@@ -387,6 +525,31 @@ class MainWindow(QMainWindow):
         self._trace_header_action.setEnabled(enabled)
         self._data_window_action.setEnabled(enabled)
 
+    def _set_window_actions_enabled(self, enabled: bool) -> None:
+        self._cascade_windows_action.setEnabled(enabled)
+        self._tile_screen_action.setEnabled(enabled)
+        self._tile_horizontal_action.setEnabled(enabled)
+        self._tile_vertical_action.setEnabled(enabled)
+        self._maximize_all_windows_action.setEnabled(enabled)
+        self._close_all_windows_action.setEnabled(enabled)
+        self._list_seismic_windows_action.setEnabled(enabled)
+
     def _on_seismic_window_destroyed(self, window: SeismicDataWindow):
         if window in self._seismic_windows:
             self._seismic_windows.remove(window)
+
+        if len(self._seismic_windows) == 0:
+            self._set_window_actions_enabled(False)
+
+    #Metodo que pega a geometria do SegyFileInspector
+    #Utilizado para inicializar a SeismicDataWindow sobre o SegyFileInspector
+    def _seismic_window_geometry(self) -> QRect:
+        inspector = self._file_inspector
+
+        global_top_left = inspector.mapToGlobal(QPoint(0, 0))
+
+        return QRect(global_top_left.x(),
+                     global_top_left.y(),
+                     inspector.width(),
+                     inspector.height()
+                    )
