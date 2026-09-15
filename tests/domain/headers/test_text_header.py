@@ -3,7 +3,7 @@ from pathlib import Path
 import segyio
 
 from segy_viewer.domain.exceptions.headers_exceptions import SegyTextHeaderError
-from segy_viewer.domain.headers.text_header import SegyTextHeader
+from segy_viewer.domain.headers.segy_text_header import SegyTextHeader
 
 BASE_DIR = Path(__file__).parent.parent
 path_segy_file =  Path("H:/") / "ENTREGA - ANP"  / "SÍSMICA"  / "0328-SW0001.sgy"

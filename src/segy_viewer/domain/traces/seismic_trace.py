@@ -18,7 +18,7 @@ Histórico:
 import numpy as np
 from numpy.typing import NDArray
 from dataclasses import dataclass
-from segy_viewer.domain.headers.trace_header import SegyTraceHeader
+from segy_viewer.domain.headers.segy_trace_header import SegyTraceHeader
 
 @dataclass(slots=True)
 class SeismicTrace:

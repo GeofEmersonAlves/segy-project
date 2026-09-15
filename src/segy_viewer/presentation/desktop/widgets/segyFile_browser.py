@@ -21,6 +21,7 @@ Descrição:
 
 Histórico:
        14/08/2026 - Implementação da Classe
+       11/09/2026 - Criação do signal file_double_clicked(path)
 ===============================================================================
 """
 from PySide6.QtWidgets import (QWidget, QTreeView, QFileSystemModel,
@@ -62,6 +63,7 @@ class _SegyFileIconProvider(QFileIconProvider):
 class SegyFileBrowser(QWidget):
 
     file_selected = Signal(Path)  #Signal emitido quando o usuário clica em um arquivo
+    file_double_clicked = Signal(Path)
     path_changed = Signal(Path)   #Signal emitido quando o usuário muda a pasta
 
     def __init__(self, segy_extensions: tuple[str, ...], config: AppConfig , parent=None):
@@ -251,13 +253,16 @@ class SegyFileBrowser(QWidget):
     @Slot()
     def _on_double_clicked(self, index) -> None:
         index = index.siblingAtColumn(0)
-
         path = Path(self.model.filePath(index))
 
         if path.is_dir():
             self._path = path
             self.tree.setRootIndex(index)
             self._set_current_diretory(path)
+
+        elif path.is_file():
+            self.file_double_clicked.emit(path)
+
 
 # ========================================================================================================
     def _inital_path(self)->Path:

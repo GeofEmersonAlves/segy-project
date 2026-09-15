@@ -19,10 +19,12 @@ Histórico:
 from pathlib import Path
 from segy_viewer import AppConfig
 from segy_viewer.presentation.desktop import MainWindow
+from segy_viewer.presentation.desktop.windows.seismic_data_window_factory import SeismicDataWindowFactory
 from segy_viewer.presentation.desktop.widgets import SegyFileInspector, SegyFileBrowser
 from segy_viewer.presentation.desktop.tools import SegyTools
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.infrastructure.segy import SegyFile
+
 
 #Factory que cria um segy file
 def create_segy_file(path: Path) -> SegyFile:
@@ -45,11 +47,13 @@ def create_application():
                                         config=config)
 
     # Main Window
+    seismic_data_window_factory =  SeismicDataWindowFactory()
     main_window_tools = SegyTools()
     main_window = MainWindow(config = config,
                              tools = main_window_tools,
                              file_browser = segy_file_browser,
-                             file_inspector = segy_file_inspector
+                             file_inspector = segy_file_inspector,
+                             seismic_data_window_factory = seismic_data_window_factory
                              )
 
     return main_window

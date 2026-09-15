@@ -152,52 +152,74 @@ class AppConfig:
                                         }
                                         """
     SEISMIC_SCROLLBAR_STYLE = """
-                                     QScrollBar:horizontal {
-                                        background: #eeeeee;
-                                        height: 30px;
-                                        margin: 0px 30px 0px 30px;
-                                        border: 1px solid #b8b8b8;
-                                    }
-                                
-                                    QScrollBar::handle:horizontal {
-                                        background: #a8a8a8;
-                                        min-width: 60px;
-                                        border: 1px solid #777777;
-                                        border-radius: 3px;
-                                    }
-                                
-                                    QScrollBar::handle:horizontal:hover {
-                                        background: #909090;
-                                    }
-                                
-                                    QScrollBar::handle:horizontal:pressed {
-                                        background: #787878;
-                                    }
-                                
-                                    QScrollBar::add-line:horizontal {
-                                        background: #dddddd;
-                                        width: 29px;
-                                        subcontrol-position: right;
-                                        subcontrol-origin: margin;
-                                        border: 1px solid #aaaaaa;
-                                    }
-                                
-                                    QScrollBar::sub-line:horizontal {
-                                        background: #dddddd;
-                                        width: 29px;
-                                        subcontrol-position: left;
-                                        subcontrol-origin: margin;
-                                        border: 1px solid #aaaaaa;
-                                    }
-                                
-                                    QScrollBar::add-page:horizontal {
-                                        background: #eeeeee;
-                                    }
-                                
-                                    QScrollBar::sub-page:horizontal {
-                                        background: #eeeeee;
-                                    }
-                                """
+                                QScrollBar:horizontal {
+                                    background: #eeeeee;
+                                    height: 20px;
+                                    margin: 0px 30px 0px 30px;
+                                    border: 1px solid #b8b8b8;
+                                }
+                        
+                                QScrollBar::handle:horizontal {
+                                    background: #a8a8a8;
+                                    min-width: 60px;
+                                    border: 1px solid #777777;
+                                    border-radius: 3px;
+                                }
+                        
+                                QScrollBar::handle:horizontal:hover {
+                                    background: #909090;
+                                }
+                        
+                                QScrollBar::handle:horizontal:pressed {
+                                    background: #787878;
+                                }
+                        
+                                QScrollBar::add-line:horizontal {
+                                    background: #dddddd;
+                                    width: 29px;
+                                    subcontrol-position: right;
+                                    subcontrol-origin: margin;
+                                    border: 1px solid #aaaaaa;
+                                }
+                        
+                                QScrollBar::sub-line:horizontal {
+                                    background: #dddddd;
+                                    width: 29px;
+                                    subcontrol-position: left;
+                                    subcontrol-origin: margin;
+                                    border: 1px solid #aaaaaa;
+                                }
+                        
+                                QScrollBar::right-arrow:horizontal {
+                                    image: url(:/icons/arrow_right.png);
+                                    width: 8px;
+                                    height: 8px;
+                                }
+                        
+                                QScrollBar::left-arrow:horizontal {
+                                    image: url(:/icons/arrow_left.png);
+                                    width: 8px;
+                                    height: 8px;
+                                }
+                        
+                                QScrollBar::add-line:horizontal:hover,
+                                QScrollBar::sub-line:horizontal:hover {
+                                    background: #c8c8c8;
+                                }
+                        
+                                QScrollBar::add-line:horizontal:pressed,
+                                QScrollBar::sub-line:horizontal:pressed {
+                                    background: #b0b0b0;
+                                }
+                        
+                                QScrollBar::add-page:horizontal {
+                                    background: #eeeeee;
+                                }
+                        
+                                QScrollBar::sub-page:horizontal {
+                                    background: #eeeeee;
+                                }
+                            """
 
     # -quantidade inicial de traces para visualização
     # -diretório de logs

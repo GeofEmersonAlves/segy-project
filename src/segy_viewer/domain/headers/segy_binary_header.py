@@ -2,7 +2,7 @@
 """
 ===============================================================================
 Projeto    : segy-project
-Arquivo    : binary_header.py
+Arquivo    : segy_binary_header.py
 Autor      : Emerson Alves da Silva
 Versão     : 1.0
 Python     : Python 3.12.13 | packaged by Anaconda, Inc.

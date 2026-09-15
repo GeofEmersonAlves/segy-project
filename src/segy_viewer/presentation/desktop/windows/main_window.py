@@ -20,12 +20,10 @@ from typing import Protocol
 from PySide6.QtCore import Qt, Slot, QSize, QRect, QPoint
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (QMainWindow, QSplitter, QStatusBar,
-                               QLabel, QToolBar, QComboBox, QMessageBox,
-                               QWidget, QDialog)
+                               QLabel, QToolBar, QComboBox, QWidget, QDialog)
 from segy_viewer import AppConfig
-from segy_viewer.application.use_cases import inspect_segy_file
-# from segy_viewer.application.use_cases import SegyFileInspectorUseCases
 from segy_viewer.presentation.desktop.windows import SeismicDataWindow
+from segy_viewer.presentation.desktop.windows.seismic_data_window_factory import SeismicDataWindowFactory
 from segy_viewer.resources import resource_path
 
 
@@ -54,6 +52,7 @@ class MainWindow(QMainWindow):
                  tools: MainWindowTools,
                  file_browser: QWidget,
                  file_inspector: QWidget,
+                 seismic_data_window_factory: SeismicDataWindowFactory,
                  parent=None):
         super().__init__(parent)
 
@@ -62,6 +61,7 @@ class MainWindow(QMainWindow):
         self._segy_path: Path | None = None
         self._file_browser = file_browser
         self._file_inspector = file_inspector
+        self._seismic_data_window_factory = seismic_data_window_factory
 
         self._seismic_windows: list[SeismicDataWindow] = []
 
@@ -276,6 +276,7 @@ class MainWindow(QMainWindow):
     def _connect_signals(self) -> None:
         # Browser -> MainWindow
         self._file_browser.file_selected.connect(self._on_segy_file_selected)
+        self._file_browser.file_double_clicked.connect(self._on_segy_file_double_clicked)
         self._file_browser.path_changed.connect(self._on_directory_changed)
 
         # Inspector -> MainWindow
@@ -359,6 +360,13 @@ class MainWindow(QMainWindow):
         self._file_status_label.setText(f"File: {path}")
 
     @Slot(Path)
+    def _on_segy_file_double_clicked(self, path: Path) -> None:
+        self._segy_path = path
+        self._file_status_label.setText(f"File: {path}")
+        self._on_segy_file_selected(path)
+        self._show_seismic_data_window()
+
+    @Slot(Path)
     def _on_directory_changed(self, path: Path) -> None:
         self._segy_path = path
         self._file_status_label.setText(f"Directory: {path}")
@@ -379,7 +387,9 @@ class MainWindow(QMainWindow):
             return
 
         geometry = self._seismic_window_geometry()
-        seismic_window = SeismicDataWindow(path=path,  initial_geometry=geometry, config=self._config)
+        seismic_window = self._seismic_data_window_factory.create(path=path,
+                                                                  initial_geometry=geometry,
+                                                                  config=self._config)
         self._seismic_windows.append(seismic_window)
         seismic_window.destroyed.connect(lambda: self._on_seismic_window_destroyed(seismic_window))
         self._set_window_actions_enabled(True)

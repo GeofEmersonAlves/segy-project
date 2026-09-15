@@ -16,6 +16,8 @@ Histórico:
        09/08/2026 - Implementação dos metodos read_trace_header, read_trace, read_traces e read_trace_headers
        10/08/2026 - Implementação do metodo read_samples_matrix, pensei neste método pois com uma matrix
                  será mais fácil e perfomático fazer cálculos com as amostras dos traços
+       14/09/2026 - Implementação do método read_samples_by_indices para facilitar a leitarua dos traços
+                 quando for implemententado a leitura ordenada por algum agrupamento (shot, rec, ...)
 ===============================================================================
 """
 import segyio
@@ -50,21 +52,13 @@ class SegyioReader(SeismicReader):
             return
 
         if not self._path.exists():
-            raise FileNotFoundError(
-                f"Arquivo SEG-Y não encontrado: {self._path}"
-            )
+            raise FileNotFoundError(f"Arquivo SEG-Y não encontrado: {self._path}")
 
-        self._segy_file = segyio.open(
-            str(self._path),
-            mode="r",
-            strict=False,
-            ignore_geometry=True,
-        )
+        self._segy_file = segyio.open(str(self._path), mode="r", strict=False, ignore_geometry=True)
 
     def close(self) -> None:
         if self._segy_file is None:
             return
-
         self._segy_file.close()
         self._segy_file = None
 
@@ -209,7 +203,7 @@ class SegyioReader(SeismicReader):
 
         return SegyBinaryHeader(values=values, byte_order=ByteOrder.BIG_ENDIAN, validate_revision=False)
 
-    def read_trace_header(self,index: int) -> SegyTraceHeader:
+    def read_trace_header(self, index: int) -> SegyTraceHeader:
         """Lê somente o header do traço."""
         segy_file = self._require_open()
 
@@ -257,6 +251,33 @@ class SegyioReader(SeismicReader):
         traces = [self.read_samples(index) for index in range(start, stop) ]
 
         return np.column_stack(traces)
+
+    def read_samples_by_indices(self, indices: list[int] | NDArray[np.int64]) -> NDArray[np.float32]:
+        """
+        Retorna uma matriz com as amostras dos índices de traços informados.
+        Os índices não precisam ser consecutivos e a ordem recebida é preservada.
+        Cada coluna da matriz representa um traço e cada linha representa uma amostra.
+        Shape: (sample_count, trace_count)
+        """
+        trace_indices = np.asarray(indices, dtype=np.int64)
+        if trace_indices.ndim != 1:
+            raise ValueError("indices must be one-dimensional.")
+
+        if trace_indices.size == 0:
+            return np.empty((0, 0),dtype=np.float32)
+
+        if np.any(trace_indices < 0):
+            raise IndexError("indices contains negative trace indices.")
+
+        if np.any(trace_indices >= self.trace_count):
+            raise IndexError("Indices contains trace indices outside the available range.")
+
+        traces = [self.read_samples(int(index))
+                  for index in trace_indices
+                 ]
+
+        return np.column_stack(traces)
+
 
     def read_trace(self, index: int) -> SeismicTrace:
         """Lê um traço completo: header + samples."""

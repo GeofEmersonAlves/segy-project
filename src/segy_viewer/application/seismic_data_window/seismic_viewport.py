@@ -22,7 +22,11 @@ from dataclasses import dataclass
 
 @dataclass
 class SeismicViewport:
-    first_trace: int = 0
+    """
+        first_trace_position: Representa o primeiro traço exibido,
+                            não representa o indice físico do traço dentro do arquivo.
+    """
+    first_trace_position: int = 0
     trace_count: int = 300
 
     selected_trace: int | None = None
