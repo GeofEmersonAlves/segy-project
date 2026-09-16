@@ -54,5 +54,6 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
-        painter.drawText(event.rect(), Qt.AlignCenter,
-                         f"{self._viewport.first_trace_position} - {self._viewport.time_max_ms}")
+        text = f"First Trace:{self._viewport.first_trace_position} - Trace lenght {self._viewport.time_max_ms} ms - Mouse trace:{self.viewport.trace_under_mouse_position}"
+        painter.drawText(event.rect(), Qt.AlignCenter, text)
+

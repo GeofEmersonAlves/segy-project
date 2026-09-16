@@ -154,7 +154,7 @@ class AppConfig:
                                             margin: 0px;
                                         }
                                         """
-    SEISMIC_SCROLLBAR_STYLE = f"""
+    SEISMIC_DATA_WINDOW_SCROLLBAR_STYLE = f"""
                                 QScrollBar:horizontal {{
                                     background: #eeeeee;
                                     height: 20px;
@@ -223,6 +223,15 @@ class AppConfig:
                                     background: #eeeeee;
                                 }}
                             """
+    SEISMIC_DATA_WINDOW_STATUS_BAR_LABEL_STYLE = """
+                                                    QLabel {
+                                                                border: 1px solid #4CAF50;      /* Espessura, tipo e cor (Hexadecimal) */
+                                                                border-radius: 8px;             /* Cantos arredondados (opcional) */
+                                                                padding: 3px;                  /* Espaço interno para o texto não colar na borda */
+                                                                background-color: #FFFFFF;      /* Cor de fundo (opcional) */
+                                                            }
+                                                    """
+
 
     # -quantidade inicial de traces para visualização
     # -diretório de logs

@@ -33,12 +33,14 @@ Histórico:
        04/09/2026 - Início da implementação da janela
        09/09/2026 - Estrutura inicial da Seismic Data Window
        13/09/2026 - Construção do acesso aos dados contidos nos arquivos Seg-y
+       16/09/2026 - Inclusão de labels informativos na statusbar
 ===============================================================================
 """
 from pathlib import Path
 from PySide6.QtCore import Qt, Slot, QSize, QRect
-from PySide6.QtGui import QAction, QIcon, QKeySequence, QCloseEvent
-from PySide6.QtWidgets import QMainWindow, QScrollBar, QStatusBar, QToolBar, QVBoxLayout, QWidget, QMessageBox
+from PySide6.QtGui import QAction, QIcon, QKeySequence, QCloseEvent, QFontDatabase
+from PySide6.QtWidgets import QMainWindow, QScrollBar, QStatusBar, QToolBar, QVBoxLayout, QWidget, QMessageBox, QLabel, \
+    QSizePolicy
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.application.seismic_data_window.dto import SeismicWindowInfoDTO, SeismicDataBlockDTO
 from segy_viewer.application.seismic_data_window.seismic_data_window_use_cases import SeismicDataWindowUseCases
@@ -113,7 +115,7 @@ class SeismicDataWindow(QMainWindow):
 
         # Scrollbar - Navegação pelos traços
         self._horizontal_scrollbar =  QScrollBar(Qt.Orientation.Horizontal)
-        self._horizontal_scrollbar.setStyleSheet(self._config.SEISMIC_SCROLLBAR_STYLE)
+        self._horizontal_scrollbar.setStyleSheet(self._config.SEISMIC_DATA_WINDOW_SCROLLBAR_STYLE)
 
         # -------------------------------------------------------------
         # Construção da janela
@@ -248,8 +250,24 @@ class SeismicDataWindow(QMainWindow):
     # ======================================================================
     def _create_status_bar(self):
         status_bar = QStatusBar(self)
+
+        _font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        _font.setPointSize(8)
+        _font.setBold(True)
+
+        self._status_bar_summary_label = QLabel()
+        self._status_bar_summary_label.setFont(_font)
+        self._status_bar_summary_label.setStyleSheet(self._config.SEISMIC_DATA_WINDOW_STATUS_BAR_LABEL_STYLE)
+
+        self._status_bar_trace_info_label = QLabel()
+        # _font.setPointSize(9)
+        self._status_bar_trace_info_label.setFont(_font)
+        status_bar.addPermanentWidget(self._status_bar_trace_info_label)
+        status_bar.addPermanentWidget(self._status_bar_summary_label)
+
         self.setStatusBar(status_bar)
-        status_bar.showMessage("Ready")
+        self.statusBar().showMessage("Ready")
+
 
 
     # ======================================================================
@@ -283,6 +301,7 @@ class SeismicDataWindow(QMainWindow):
     def _connect_signals(self):
         self._exit_action.triggered.connect(self.close)
         self._horizontal_scrollbar.valueChanged.connect(self._on_horizontal_scroll)
+        self._trace_attribute_graph_view.graphMouseMoved.connect(self._update_status_bar_graph_info)
 
 
     # ======================================================================
@@ -327,11 +346,13 @@ class SeismicDataWindow(QMainWindow):
             # First data request
             # --------------------------------------------------------------
             self._request_current_data()
+            self._status_bar_summary_label.setText((f"{self._total_trace_count:,} traces | "
+                                                    f"{self._window_info.sample_count} samples/trace | "
+                                                    f"{self._window_info.sample_interval_us} µs"
+                                                  ))
 
-            self.statusBar().showMessage((f"{self._total_trace_count:,} traces | "
-                                          f"{self._window_info.sample_count} samples/trace | "
-                                          f"{self._window_info.sample_interval_us} µs"
-                                        ))
+            self.statusBar().showMessage("Ready - SEG-Y file opened.")
+
         except Exception as error:
             if self._data_is_open:
                 self._use_cases.close()
@@ -397,6 +418,15 @@ class SeismicDataWindow(QMainWindow):
         self._seismic_data_samples_view.refresh()
         self._trace_attribute_graph_view.refresh()
 
+    # ======================================================================
+    # status Bar
+    # ======================================================================
+    @Slot(str)
+    def _update_status_bar_graph_info(self, message: str) -> None:
+        self._status_bar_trace_info_label.setText(message)
+        #atualiza os outros Widgets pois a o traco sob o mouse mudou
+        self._trace_header_view.refresh()
+        self._seismic_data_samples_view.refresh()
 
     # ======================================================================
     # Horizontal navigation

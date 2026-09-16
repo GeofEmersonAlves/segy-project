@@ -19,7 +19,7 @@ Histórico:
 import numpy as np
 import math
 
-from PySide6.QtCore import QPointF, QRectF
+from PySide6.QtCore import QPointF, QRectF, Signal
 from PySide6.QtGui import QPainter, QPaintEvent, Qt, QPen, QColor, QFont
 from PySide6.QtWidgets import QWidget
 from segy_viewer.application.seismic_data_window import SeismicViewport
@@ -27,14 +27,23 @@ from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchr
 
 
 class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
+    #signal emitido quando o mouse massa pelo grafico
+    graphMouseMoved = Signal(str)
+
     def __init__(self,  viewport: SeismicViewport,   parent: QWidget | None = None):
         super().__init__(viewport=viewport, parent=parent)
 
+        self._mouse_pos = None #Posição do mouse para fazer o Mouse Tracker
+        self._mouse_tracking_on = True #Asssim pode ser configurável mostrar ou nao as linhas do tracking
         self.setMouseTracking(True)
-        # self.viewport.trace_count=1200
+
+        # self.viewport.trace_count=800  #Vai para a configuracao
         self._trace_positions: np.ndarray = np.empty(0, dtype=np.int64)
         self._trace_indices: np.ndarray = np.empty(0, dtype=np.int64)
         self._graph_header_values: dict[str, np.ndarray] = {}
+        self._header_key:str = ""
+        self._header_values : np.ndarray = np.empty(0, dtype=np.int64)
+        self._position_to_array_index: dict[int, int] = {}
 
         self._y_axis_zero_fixed: bool = False  #Mantém o ínicio do eixo X fixo no zero, se Falso o inicio depende do _minimum_value
         self._y_tick_interval: float = 1.0
@@ -45,27 +54,103 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         self._top_margin: float = 5.0
         self._bottom_margin: float = 5.0
 
+    def mouseMoveEvent(self, event):
+        screen_point = event.position()
+        self._mouse_pos = screen_point.toPoint()
+        trace_position = self.x_to_trace_position(screen_point.x())
 
+        if trace_position is None:
+            return
+
+        if self._header_key is None:
+            return
+
+        if self._header_values is None:
+            return
+
+        array_index = self._position_to_array_index.get(trace_position)
+        if array_index is None:
+            return
+
+        if not 0 <= array_index < len(self._header_values):
+            return
+
+        header_value = float(self._header_values[array_index])
+
+        inverse_transform, ok = self._transform.inverted()
+        if not ok:
+            return
+
+        data_point = inverse_transform.map(screen_point)
+        _value = data_point.y()
+        mouse_text = f"Trace: {trace_position} {self._header_key}: {header_value:.2f} - Value: {_value:.2f}"
+        #Atualiza o viewport com o traco atual sob o ponteiro do mouse
+        self.viewport.trace_under_mouse_position = trace_position
+        self.graphMouseMoved.emit(mouse_text)
+        self.update()  # Dispara o paintEvent
+
+    def mousePressEvent(self, event):
+        if event.button() != Qt.MouseButton.LeftButton:
+            super().mousePressEvent(event)
+            return
+
+        screen_point = event.position()
+
+        trace_position = self.x_to_trace_position(
+            screen_point.x()
+        )
+
+        if trace_position is None:
+            return
+
+        array_index = self._position_to_array_index.get(
+            trace_position
+        )
+
+        if array_index is None:
+            return
+
+        trace_index = int(
+            self._trace_indices[array_index]
+        )
+
+        header_value = float(
+            self._header_values[array_index]
+        )
+
+        print(
+            f"Posição selecionada: {trace_position}, "
+            f"índice no SEG-Y: {trace_index}, "
+            f"{self._header_key}: {header_value:.2f}"
+        )
+
+    def leaveEvent(self, event):
+        # Limpa as linhas quando o mouse sai do widget
+        self.mouse_pos = None
+        self.update()
+    
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.save()
-        #Separa o header e os valores
-        header_key, header_values = next(iter(self._graph_header_values.items()))
 
+        white_color_background = QColor(255, 255, 255)
 
         #Desenha um retantulo ao lado esquero, area para plotagem do eixo Y e escreve o nome da variavel
-        painter.drawRect(QRectF(0.5, 0.5, self._left_margin-0.5, self.height()-1))
-        self._draw_vertical_text_up(painter, self._left_margin/3,self.height()-5, header_key)
+        left_rect =QRectF(0.5, 0.5, self._left_margin-0.5, self.height()-1)
+        painter.fillRect(left_rect, white_color_background)
+        painter.drawRect(left_rect)
+        self._draw_vertical_text_up(painter, self._left_margin/3,self.height()-5,self._header_key)
 
         #Desenha um retangulo do lado direito, área para plotagem dos dados
-        rectF = QRectF(self._left_margin, 0.5, self.plot_width+0.5, self.height()-1)
-        painter.drawRect(rectF)
+        right_rect = QRectF(self._left_margin, 0.5, self.plot_width+0.5, self.height()-1)
+        painter.fillRect(right_rect, white_color_background)
+        painter.drawRect(right_rect)
 
         #Escreve no canto inferior esquero da area de plotagem os valores mínimo e máximo dos dados
-        font = QFont("Arial", 7, QFont.Weight.Bold)
+        font = QFont("Arial", 7, QFont.Weight.Bold) #Vai para a configuracao
         painter.setFont(font)
         texto = f"Min: {self._minimum_value:.2f} - Max: {self._maximum_value:.2f}"
-        painter.drawText(rectF, Qt.AlignRight | Qt.AlignBottom, texto)
+        painter.drawText(right_rect, Qt.AlignRight | Qt.AlignBottom, texto)
 
         painter.restore()
 
@@ -78,12 +163,14 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
                                   )
                             )
         if self._create_cartesian_coord_system(painter):
-            self._plot_header_values(painter=painter,header_values=header_values)
+            self._plot_header_values(painter=painter)
 
         painter.restore()
 
         self._draw_y_axis(painter)
         self._draw_y_grid(painter)
+        if self._mouse_tracking_on:
+            self._draw_trackin_lines(painter)
 
 
     def set_data(self, trace_positions: np.ndarray,
@@ -129,6 +216,16 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         self._trace_positions = trace_positions.copy()
         self._trace_indices = trace_indices.copy()
         self._graph_header_values = converted_header_values
+
+        # Separa o header e os valores
+        header_key, header_values = next(iter(self._graph_header_values.items()))
+        self._header_key = header_key
+        self._header_values = header_values
+        self._position_to_array_index = {int(trace_position): array_index
+                                            for array_index, trace_position in enumerate(
+                                                self._trace_positions
+                                            )
+                                        }
         # print(self._graph_header_values)
 
         self._minimum_value = None
@@ -531,25 +628,37 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         painter.restore()
 
-    def _plot_header_values(self, painter : QPainter,  header_values: dict[str, np.ndarray]):
-        point_pen = QPen(Qt.GlobalColor.darkRed)
+    def _plot_header_values(self, painter : QPainter):
+        point_pen = QPen(Qt.GlobalColor.darkRed) #Vai para a configuracao
         point_pen.setWidthF(4.0)
         point_pen.setCosmetic(True)
         point_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
 
         painter.setPen(point_pen)
         points = []
-        for trace_position, header_value in zip(self._trace_positions, header_values):
+        for trace_position, header_value in zip(self._trace_positions, self._header_values):
             if not np.isfinite(header_value):
                 continue
             point = QPointF(float(trace_position), float(header_value))
-            painter.drawPoint(point)
+            painter.drawPoint(point) #Vai para a configuracao
             points.append(point)
 
-        line_pen = QPen(Qt.GlobalColor.darkBlue)
+        line_pen = QPen(Qt.GlobalColor.darkBlue) #Vai para a configuracao
         line_pen.setWidthF(1.0)
         line_pen.setStyle(Qt.PenStyle.SolidLine)
         line_pen.setCosmetic(True)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setPen(line_pen)
-        painter.drawPolyline(points)
+        painter.drawPolyline(points) #Vai para a configuracao
+
+    def _draw_trackin_lines(self, painter):
+        if self._mouse_pos is not None:
+            # Configura a caneta (cor vermelha, espessura 1, linha tracejada)
+            pen = QPen(QColor("#ff4757"), 1, Qt.DashLine)
+            painter.setPen(pen)
+
+            # Desenha a linha horizontal (da esquerda até a direita na altura Y do mouse)
+            painter.drawLine(0, self._mouse_pos.y(), self.width(), self._mouse_pos.y())
+
+            # Desenha a linha vertical (do topo até a base na largura X do mouse)
+            painter.drawLine(self._mouse_pos.x(), 0, self._mouse_pos.x(), self.height())

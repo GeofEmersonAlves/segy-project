@@ -15,6 +15,10 @@ Descrição:
 Histórico:
 
        04/09/2026 - Início da implementação
+       16/09/2026 - Inclusão da propriedade trace_under_mouse_position, que guarda
+                  o número do traco para qual o ponteiro do mouse esta apontado
+                  assim, todos os widgets terão esta referencia. A propriedade
+                  selected_trace ser alterada quando o usuário clicar no traco.
 ===============================================================================
 """
 
@@ -30,6 +34,8 @@ class SeismicViewport:
     trace_count: int = 300
 
     selected_trace: int | None = None
+    trace_under_mouse_position: int | None = None
+
 
     time_min_ms: float = 0.0
     time_max_ms: float | None = None
