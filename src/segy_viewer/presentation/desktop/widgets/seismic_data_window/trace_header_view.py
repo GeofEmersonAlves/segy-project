@@ -8,7 +8,7 @@ Versão     : 1.0
 Python     : Python 3.12.13 | packaged by Anaconda, Inc.
 
 Descrição:
-         Classe que cria o HSynchronizedSeismicDataWidget TraceHeaderView, responsável por mostrar os headers
+         Classe que cria o TraceHeaderView filho de HSynchronizedSeismicDataWidget, responsável por mostrar os headers
     dos dados contitidos em um segy. Inicialmente os tracos aparecem somente com o Channel no cabeçalho
 
     Channel: trace_number_field_record (bytes 13-16)

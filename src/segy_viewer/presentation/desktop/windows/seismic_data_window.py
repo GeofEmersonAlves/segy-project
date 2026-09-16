@@ -383,11 +383,9 @@ class SeismicDataWindow(QMainWindow):
         #     samples=data_block.samples,
         # )
         #
-        # self._trace_attribute_graph_view.set_data(
-        #     trace_positions=data_block.trace_positions,
-        #     trace_indices=data_block.trace_indices,
-        #     graph_header_values=data_block.graph_header_values,
-        # )
+        self._trace_attribute_graph_view.set_data(trace_positions=data_block.trace_positions,
+                                                  trace_indices=data_block.trace_indices,
+                                                  graph_header_values=data_block.graph_header_values)
         self._refresh_hsynchronized_widgets()
 
 

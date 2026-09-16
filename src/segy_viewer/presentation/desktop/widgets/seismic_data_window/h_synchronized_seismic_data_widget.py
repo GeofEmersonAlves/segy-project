@@ -76,11 +76,35 @@ class HSynchronizedSeismicDataWidget(QWidget):
         return self._viewport
 
     @property
+    def first_trace_position(self) -> int:
+        """
+        Primeira posição de visualização atualmente visível.
+        """
+        return self._viewport.first_trace_position
+
+    @property
     def first_trace(self) -> int:
         """
         Índice global do primeiro traço atualmente visível.
         """
-        return self._viewport.first_trace_position
+        return self.first_trace_position
+
+    @property
+    def last_trace_position(self) -> int:
+        """
+        Última posição de visualização atualmente visível.
+        """
+        if self.trace_count <= 0:
+            return self.first_trace_position
+
+        return self.first_trace_position + self.trace_count - 1
+
+    @property
+    def last_trace(self) -> int:
+        """
+        Alias temporário para compatibilidade.
+        """
+        return self.last_trace_position
 
     @property
     def trace_count(self) -> int:
@@ -88,22 +112,6 @@ class HSynchronizedSeismicDataWidget(QWidget):
         Quantidade de traços atualmente visíveis.
         """
         return self._viewport.trace_count
-
-    @property
-    def last_trace(self) -> int:
-        """
-        Índice global do último traço do viewport.
-
-        Exemplo:
-            first_trace = 100
-            trace_count = 300
-            last_trace = 399
-        """
-
-        if self.trace_count <= 0:
-            return self.first_trace
-
-        return (self.first_trace + self.trace_count  - 1)
 
     @property
     def selected_trace(self) -> int | None:
@@ -178,85 +186,72 @@ class HSynchronizedSeismicDataWidget(QWidget):
             / self.trace_count
         )
 
+    @property
+    def x_scale(self) -> float:
+        """
+        Escala horizontal em pixels por posição de visualização.
+        """
+        return self.trace_spacing
+
     # ======================================================================
     # Trace coordinates
     # ======================================================================
+    def trace_position_to_x(self, trace_position: int) -> float:
+        """
+        Converte uma posição de visualização na coordenada X
+        correspondente ao centro do traço.
+        """
+        local_position = (trace_position - self.first_trace_position)
+        return (self.plot_left  + local_position * self.x_scale + self.x_scale / 2.0)
+
+
     def trace_to_x(self, trace_index: int) -> float:
         """
-        Converte o índice global de um traço para sua coordenada X.
+            Alias temporário para compatibilidade.
+            """
+        return self.trace_position_to_x(trace_index)
 
-        A coordenada retornada representa o centro horizontal reservado
-        para o traço.
-
-        Exemplo:
-            viewport.first_trace = 100
-            trace_to_x(100)
-                -> centro da primeira posição visível
-            trace_to_x(101)
-                -> centro da segunda posição visível
+    def x_to_trace_position(self, x: float) -> int | None:
         """
-        local_index = (trace_index - self.first_trace  )
-
-        return ( self.plot_left
-               + local_index * self.trace_spacing
-               + self.trace_spacing / 2.0
-              )
-
-    def x_to_trace(self, x: float) -> int | None:
-        """
-        Converte uma coordenada X do widget para o índice global do traço.
-
-        Retorna None caso a coordenada esteja fora da área de plotagem ou
-        quando não existirem traços visíveis.
-
-        Este método será útil posteriormente para:
-            - mouseMoveEvent;
-            - seleção de traços;
-            - tooltips;
-            - status bar;
-            - hover.
+        Converte uma coordenada X na posição de visualização
+        correspondente.
         """
         if self.trace_count <= 0:
             return None
 
-        if self.trace_spacing <= 0.0:
+        if self.x_scale <= 0.0:
             return None
 
-        if x < self.plot_left:
+        if not self.plot_left <= x < self.plot_right:
             return None
 
-        if x >= self.plot_right:
+        local_position = int(
+            (x - self.plot_left) / self.x_scale
+        )
+
+        if not 0 <= local_position < self.trace_count:
             return None
 
-        local_index = int( (x - self.plot_left) /  self.trace_spacing)
+        return self.first_trace_position + local_position
 
-        if not 0 <= local_index < self.trace_count:
-            return None
-
-        return ( self.first_trace + local_index)
+    def x_to_trace(self, x: float) -> int | None:
+        """
+            Alias temporário para compatibilidade.
+        """
+        return self.x_to_trace_position(x)
 
     # ======================================================================
     # Trace range
     # ======================================================================
     def visible_trace_range(self) -> range:
-        """
-        Retorna os índices globais dos traços pertencentes ao viewport.
+        return range(self.first_trace_position,
+                     self.first_trace_position + self.trace_count)
 
-        Exemplo:
-            first_trace = 100
-            trace_count = 3
-        retorna:
-            range(100, 103)
-        equivalente a: 100, 101, 102
-        """
-
-        return range( self.first_trace, self.first_trace + self.trace_count)
-
-    def is_trace_visible(self, trace_index: int) -> bool:
-        """
-        Verifica se um índice de traço pertence ao viewport atual.
-        """
-        return (self.first_trace <= trace_index <= self.last_trace)
+    def is_trace_visible(self, trace_position: int) -> bool:
+        return (self.first_trace_position
+                <= trace_position
+                <= self.last_trace_position
+                )
 
     # ======================================================================
     # Margins

@@ -21,10 +21,13 @@ Histórico:
 ===============================================================================
 """
 from dataclasses import dataclass
-
+from segy_viewer.resources import resource_path
 
 @dataclass(frozen=True)
 class AppConfig:
+    ARROW_LEFT = resource_path("resources/icons/arrow_left.png").as_posix()
+    ARROW_RIGHT = resource_path("resources/icons/arrow_right.png").as_posix()
+
     app_version: str = "0.5.0-alpha"
     app_name: str = f"Segy Viewer (Version {app_version})"
     app_author: str = "Emerson Alves da Silva"
@@ -151,74 +154,74 @@ class AppConfig:
                                             margin: 0px;
                                         }
                                         """
-    SEISMIC_SCROLLBAR_STYLE = """
-                                QScrollBar:horizontal {
+    SEISMIC_SCROLLBAR_STYLE = f"""
+                                QScrollBar:horizontal {{
                                     background: #eeeeee;
                                     height: 20px;
                                     margin: 0px 30px 0px 30px;
                                     border: 1px solid #b8b8b8;
-                                }
-                        
-                                QScrollBar::handle:horizontal {
+                                }}
+                            
+                                QScrollBar::handle:horizontal {{
                                     background: #a8a8a8;
                                     min-width: 60px;
                                     border: 1px solid #777777;
                                     border-radius: 3px;
-                                }
-                        
-                                QScrollBar::handle:horizontal:hover {
+                                }}
+                            
+                                QScrollBar::handle:horizontal:hover {{
                                     background: #909090;
-                                }
-                        
-                                QScrollBar::handle:horizontal:pressed {
+                                }}
+                            
+                                QScrollBar::handle:horizontal:pressed {{
                                     background: #787878;
-                                }
-                        
-                                QScrollBar::add-line:horizontal {
+                                }}
+                            
+                                QScrollBar::add-line:horizontal {{
                                     background: #dddddd;
                                     width: 29px;
                                     subcontrol-position: right;
                                     subcontrol-origin: margin;
                                     border: 1px solid #aaaaaa;
-                                }
-                        
-                                QScrollBar::sub-line:horizontal {
+                                }}
+                            
+                                QScrollBar::sub-line:horizontal {{
                                     background: #dddddd;
                                     width: 29px;
                                     subcontrol-position: left;
                                     subcontrol-origin: margin;
                                     border: 1px solid #aaaaaa;
-                                }
-                        
-                                QScrollBar::right-arrow:horizontal {
-                                    image: url(:/icons/arrow_right.png);
+                                }}
+                            
+                                QScrollBar::right-arrow:horizontal {{
+                                    image: url("{ARROW_RIGHT}");
                                     width: 8px;
                                     height: 8px;
-                                }
-                        
-                                QScrollBar::left-arrow:horizontal {
-                                    image: url(:/icons/arrow_left.png);
+                                }}
+                            
+                                QScrollBar::left-arrow:horizontal {{
+                                    image: url("{ARROW_LEFT}");
                                     width: 8px;
                                     height: 8px;
-                                }
-                        
+                                }}
+                            
                                 QScrollBar::add-line:horizontal:hover,
-                                QScrollBar::sub-line:horizontal:hover {
+                                QScrollBar::sub-line:horizontal:hover {{
                                     background: #c8c8c8;
-                                }
-                        
+                                }}
+                            
                                 QScrollBar::add-line:horizontal:pressed,
-                                QScrollBar::sub-line:horizontal:pressed {
+                                QScrollBar::sub-line:horizontal:pressed {{
                                     background: #b0b0b0;
-                                }
-                        
-                                QScrollBar::add-page:horizontal {
+                                }}
+                            
+                                QScrollBar::add-page:horizontal {{
                                     background: #eeeeee;
-                                }
-                        
-                                QScrollBar::sub-page:horizontal {
+                                }}
+                            
+                                QScrollBar::sub-page:horizontal {{
                                     background: #eeeeee;
-                                }
+                                }}
                             """
 
     # -quantidade inicial de traces para visualização
