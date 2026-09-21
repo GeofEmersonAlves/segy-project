@@ -302,6 +302,7 @@ class SeismicDataWindow(QMainWindow):
         self._exit_action.triggered.connect(self.close)
         self._horizontal_scrollbar.valueChanged.connect(self._on_horizontal_scroll)
         self._trace_attribute_graph_view.graphMouseMoved.connect(self._update_status_bar_graph_info)
+        self._trace_attribute_graph_view.mouseTraceSelected.connect(self._update_selected_trace)
 
 
     # ======================================================================
@@ -427,6 +428,22 @@ class SeismicDataWindow(QMainWindow):
         #atualiza os outros Widgets pois a o traco sob o mouse mudou
         self._trace_header_view.refresh()
         self._seismic_data_samples_view.refresh()
+
+    # ======================================================================
+    # Trace Selected
+    # ======================================================================
+    @Slot(int)
+    def _update_selected_trace(self, trace_index: int | None) -> None:
+        # atualiza os  Widgets
+        if trace_index is None:
+            self.statusBar().showMessage("Ready - SEG-Y file opened.")
+        else:
+            self.statusBar().showMessage(f"Selected trace: {trace_index}")
+
+        self._trace_attribute_graph_view.refresh()
+        self._trace_header_view.refresh()
+        self._seismic_data_samples_view.refresh()
+
 
     # ======================================================================
     # Horizontal navigation

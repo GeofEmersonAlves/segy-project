@@ -14,6 +14,9 @@ Descrição:
 
 Histórico:
        15/09/2026 - Início da criação do Widget
+       21/09/2026 - Criação do signal mouseTraceSelected
+       21/09/2026 - Seleção de traço com o click do mouse
+       21/09/2026 - Mostra o valor do Header ao lado do ponto no traco selecionado
 ===============================================================================
 """
 import numpy as np
@@ -29,6 +32,8 @@ from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchr
 class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
     #signal emitido quando o mouse massa pelo grafico
     graphMouseMoved = Signal(str)
+    #Signal emitido quando o usuário clicar em um traco
+    mouseTraceSelected = Signal(object)
 
     def __init__(self,  viewport: SeismicViewport,   parent: QWidget | None = None):
         super().__init__(viewport=viewport, parent=parent)
@@ -72,6 +77,8 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         if array_index is None:
             return
 
+        trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
+
         if not 0 <= array_index < len(self._header_values):
             return
 
@@ -83,50 +90,47 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         data_point = inverse_transform.map(screen_point)
         _value = data_point.y()
-        mouse_text = f"Trace: {trace_position} {self._header_key}: {header_value:.2f} - Value: {_value:.2f}"
+        mouse_text = f"Trace: {trace_index} {self._header_key}: {header_value:.2f} - Value: {_value:.2f}"
         #Atualiza o viewport com o traco atual sob o ponteiro do mouse
         self.viewport.trace_under_mouse_position = trace_position
         self.graphMouseMoved.emit(mouse_text)
         self.update()  # Dispara o paintEvent
+
 
     def mousePressEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:
             super().mousePressEvent(event)
             return
 
-        screen_point = event.position()
-
-        trace_position = self.x_to_trace_position(
-            screen_point.x()
-        )
+        screen_point = event.position()  #Pega a posição que foi clicada na tela
+        trace_position = self.x_to_trace_position(screen_point.x()) #Com a coordenada x converte para o numero do traço dentro do viewport
 
         if trace_position is None:
             return
 
-        array_index = self._position_to_array_index.get(
-            trace_position
-        )
-
+        array_index = self._position_to_array_index.get(trace_position)
         if array_index is None:
             return
 
-        trace_index = int(
-            self._trace_indices[array_index]
-        )
+        trace_index = int(self._trace_indices[array_index])  #Numero do traço dentro do arquivo
+        header_value = float( self._header_values[array_index])
 
-        header_value = float(
-            self._header_values[array_index]
-        )
+        if self.viewport.selected_trace == trace_index:
+            trace_index = None
 
-        print(
-            f"Posição selecionada: {trace_position}, "
-            f"índice no SEG-Y: {trace_index}, "
-            f"{self._header_key}: {header_value:.2f}"
-        )
+        self.viewport.selected_trace = trace_index
+        self.mouseTraceSelected.emit(trace_index)
+        # print(
+        #     f"Posição selecionada: {trace_position}, "
+        #     f"índice no SEG-Y: {trace_index}, "
+        #     f"{self._header_key}: {header_value:.2f}"
+        # )
 
     def leaveEvent(self, event):
         # Limpa as linhas quando o mouse sai do widget
-        self.mouse_pos = None
+        self._mouse_pos = None
+        self.viewport.trace_under_mouse_position = None
+        self.graphMouseMoved.emit("")
         self.update()
     
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -630,18 +634,37 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
     def _plot_header_values(self, painter : QPainter):
         point_pen = QPen(Qt.GlobalColor.darkRed) #Vai para a configuracao
-        point_pen.setWidthF(4.0)
+        # point_pen.setWidthF(4.0)
         point_pen.setCosmetic(True)
         point_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        # painter.setPen(point_pen)
 
-        painter.setPen(point_pen)
         points = []
         for trace_position, header_value in zip(self._trace_positions, self._header_values):
             if not np.isfinite(header_value):
                 continue
+            array_index = self._position_to_array_index.get(trace_position)
+            if array_index is None:
+                return
+
+            #Destaca o traco selecionado
+            trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
+            if trace_index == self.viewport.selected_trace:
+                point_pen.setColor(Qt.GlobalColor.darkBlue)
+                point_pen.setWidthF(8.0)
+            else:
+                point_pen.setColor(Qt.GlobalColor.darkRed)
+                point_pen.setWidthF(4.0)
+            painter.setPen(point_pen)
+
             point = QPointF(float(trace_position), float(header_value))
             painter.drawPoint(point) #Vai para a configuracao
             points.append(point)
+
+            #Mostra o valor do Header value ao lado do ponto no Traco selecionado
+            if trace_position == self.viewport.selected_trace:
+                self._draw_header_value(painter, point, header_value)
+
 
         line_pen = QPen(Qt.GlobalColor.darkBlue) #Vai para a configuracao
         line_pen.setWidthF(1.0)
@@ -651,6 +674,34 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         painter.setPen(line_pen)
         painter.drawPolyline(points) #Vai para a configuracao
 
+    def _draw_header_value(self, painter : QPainter, point:QPointF, header_value: float) -> None:
+        screen_point = painter.transform().map(point)
+        painter.save()
+        painter.resetTransform()
+        font = QFont("Arial")
+        font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Bold)
+        painter.setFont(font)
+        painter.setPen(Qt.GlobalColor.darkBlue)
+
+        font_metrics = painter.fontMetrics()
+        text_ascent = font_metrics.ascent()
+        text_x = screen_point.x() + 6.0
+
+        # Tenta desenhar acima do ponto.
+        text_y = screen_point.y() - 6.0
+
+        # Se ultrapassar o limite superior, desenha abaixo.
+        text_top = text_y - text_ascent
+        if text_top < self._top_margin:
+            text_y = screen_point.y() + text_ascent  + 6.0
+
+        if header_value < 0 : #Escreve em vermelho se o valor for negativo
+            painter.setPen(Qt.GlobalColor.red)
+
+        painter.drawText(QPointF(text_x, text_y), f"{header_value: .2f}")
+        painter.restore()
+
     def _draw_trackin_lines(self, painter):
         if self._mouse_pos is not None:
             # Configura a caneta (cor vermelha, espessura 1, linha tracejada)
@@ -658,7 +709,7 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
             painter.setPen(pen)
 
             # Desenha a linha horizontal (da esquerda até a direita na altura Y do mouse)
-            painter.drawLine(0, self._mouse_pos.y(), self.width(), self._mouse_pos.y())
+            painter.drawLine(self._left_margin - 5, self._mouse_pos.y(), self.width(), self._mouse_pos.y())
 
             # Desenha a linha vertical (do topo até a base na largura X do mouse)
             painter.drawLine(self._mouse_pos.x(), 0, self._mouse_pos.x(), self.height())
