@@ -102,13 +102,15 @@ class SeismicDataWindow(QMainWindow):
         # ------------------------------------------------------------------
         self._viewport = SeismicViewport(first_trace_position=0, trace_count=300)
 
+
         # Headers mostrados inicialmente no TraceHeaderView.
-        self._displayed_header_keys: tuple[str, ...] = ("CHANNEL_NO",)
+        self._displayed_header_keys: tuple[str, ...] = ("CHANNEL_NO","TRACE_SEQ_REEL","FIELD_RECORD_NO")
 
         # Header/atributo exibido no gráfico inferior.
         self._graph_header_keys: tuple[str, ...] = ("ELEV_REC",)
 
         # Widgets principais. Todos recebem EXATAMENTE o mesmo SeismicViewport.
+        self._mouse_tracking_on = True   #Depois mover para um dataclass de configuracao da janela de dados
         self._trace_header_view:HSynchronizedSeismicDataWidget = TraceHeaderView(viewport=self._viewport, parent=self)
         self._seismic_data_samples_view:HSynchronizedSeismicDataWidget = SeismicDataSamplesView(viewport=self._viewport, parent=self)
         self._trace_attribute_graph_view:HSynchronizedSeismicDataWidget = TraceAttributeGraphView(viewport=self._viewport, parent=self)
@@ -143,8 +145,9 @@ class SeismicDataWindow(QMainWindow):
         # ------------------------------------------------------------------
         # Trace Header View
         # ------------------------------------------------------------------
-        self._trace_header_view.setMinimumHeight(45)
-        self._trace_header_view.setMaximumHeight(160)
+        self._trace_header_view.mouse_tracking_on = self._mouse_tracking_on
+        # self._trace_header_view.setMinimumHeight(45)
+        # self._trace_header_view.setMaximumHeight(160)
 
         # ------------------------------------------------------------------
         # Seismic Data Samples View
@@ -154,7 +157,8 @@ class SeismicDataWindow(QMainWindow):
         # ------------------------------------------------------------------
         # Trace Attribute Graph View
         # ------------------------------------------------------------------
-        self._trace_attribute_graph_view.setMinimumHeight(60)
+        self._trace_attribute_graph_view.mouse_tracking_on = self._mouse_tracking_on
+        self._trace_attribute_graph_view.setMinimumHeight(70)
         self._trace_attribute_graph_view.setMaximumHeight(180)
 
         # Layout
@@ -302,7 +306,9 @@ class SeismicDataWindow(QMainWindow):
         self._exit_action.triggered.connect(self.close)
         self._horizontal_scrollbar.valueChanged.connect(self._on_horizontal_scroll)
         self._trace_attribute_graph_view.graphMouseMoved.connect(self._update_status_bar_graph_info)
+        self._trace_header_view.headerMouseMoved.connect(self._update_status_bar_graph_info)
         self._trace_attribute_graph_view.mouseTraceSelected.connect(self._update_selected_trace)
+        self._trace_header_view.mouseTraceSelected.connect(self._update_selected_trace)
 
 
     # ======================================================================
@@ -425,7 +431,8 @@ class SeismicDataWindow(QMainWindow):
     @Slot(str)
     def _update_status_bar_graph_info(self, message: str) -> None:
         self._status_bar_trace_info_label.setText(message)
-        #atualiza os outros Widgets pois a o traco sob o mouse mudou
+        #atualiza os Widgets pois a o traco sob o mouse mudou
+        self._trace_attribute_graph_view.refresh()
         self._trace_header_view.refresh()
         self._seismic_data_samples_view.refresh()
 
@@ -433,12 +440,12 @@ class SeismicDataWindow(QMainWindow):
     # Trace Selected
     # ======================================================================
     @Slot(int)
-    def _update_selected_trace(self, trace_index: int | None) -> None:
+    def _update_selected_trace(self, trace_selected: int | None) -> None:
         # atualiza os  Widgets
-        if trace_index is None:
+        if trace_selected is None:
             self.statusBar().showMessage("Ready - SEG-Y file opened.")
         else:
-            self.statusBar().showMessage(f"Selected trace: {trace_index}")
+            self.statusBar().showMessage(f"Selected trace: {trace_selected}")
 
         self._trace_attribute_graph_view.refresh()
         self._trace_header_view.refresh()

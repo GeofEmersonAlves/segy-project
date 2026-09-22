@@ -21,7 +21,6 @@ Histórico:
 """
 import numpy as np
 import math
-
 from PySide6.QtCore import QPointF, QRectF, Signal
 from PySide6.QtGui import QPainter, QPaintEvent, Qt, QPen, QColor, QFont
 from PySide6.QtWidgets import QWidget
@@ -39,7 +38,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         super().__init__(viewport=viewport, parent=parent)
 
         self._mouse_pos = None #Posição do mouse para fazer o Mouse Tracker
-        self._mouse_tracking_on = True #Asssim pode ser configurável mostrar ou nao as linhas do tracking
         self.setMouseTracking(True)
 
         # self.viewport.trace_count=800  #Vai para a configuracao
@@ -60,11 +58,14 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         self._bottom_margin: float = 5.0
 
     def mouseMoveEvent(self, event):
-        screen_point = event.position()
-        self._mouse_pos = screen_point.toPoint()
-        trace_position = self.x_to_trace_position(screen_point.x())
+        mouse_pos = event.position().toPoint()
+        self._mouse_pos = mouse_pos
+        trace_position = self.x_to_trace_position(mouse_pos.x())
 
         if trace_position is None:
+            self._mouse_pos = None
+            self.viewport.trace_under_mouse_position = None
+            self.graphMouseMoved.emit("")
             return
 
         if self._header_key is None:
@@ -88,13 +89,12 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         if not ok:
             return
 
-        data_point = inverse_transform.map(screen_point)
+        data_point = inverse_transform.map(mouse_pos)
         _value = data_point.y()
-        mouse_text = f"Trace: {trace_index} {self._header_key}: {header_value:.2f} - Value: {_value:.2f}"
+        mouse_text = f"Trace: {trace_index+1} {self._header_key}: {header_value:.2f} - Value: {_value:.2f}"
         #Atualiza o viewport com o traco atual sob o ponteiro do mouse
-        self.viewport.trace_under_mouse_position = trace_position
+        self.viewport.trace_under_mouse_position = trace_index
         self.graphMouseMoved.emit(mouse_text)
-        self.update()  # Dispara o paintEvent
 
 
     def mousePressEvent(self, event):
@@ -113,18 +113,14 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
             return
 
         trace_index = int(self._trace_indices[array_index])  #Numero do traço dentro do arquivo
-        header_value = float( self._header_values[array_index])
+        # header_value = float( self._header_values[array_index])
 
         if self.viewport.selected_trace == trace_index:
             trace_index = None
 
         self.viewport.selected_trace = trace_index
-        self.mouseTraceSelected.emit(trace_index)
-        # print(
-        #     f"Posição selecionada: {trace_position}, "
-        #     f"índice no SEG-Y: {trace_index}, "
-        #     f"{self._header_key}: {header_value:.2f}"
-        # )
+        self.mouseTraceSelected.emit(self.viewport.selected_trace_number)
+
 
     def leaveEvent(self, event):
         # Limpa as linhas quando o mouse sai do widget
@@ -137,24 +133,18 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         painter = QPainter(self)
         painter.save()
 
+        #Desenha um retantulo preenchido na area do widget
         white_color_background = QColor(255, 255, 255)
+        self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
 
-        #Desenha um retantulo ao lado esquero, area para plotagem do eixo Y e escreve o nome da variavel
-        left_rect =QRectF(0.5, 0.5, self._left_margin-0.5, self.height()-1)
-        painter.fillRect(left_rect, white_color_background)
-        painter.drawRect(left_rect)
-        self._draw_vertical_text_up(painter, self._left_margin/3,self.height()-5,self._header_key)
-
-        #Desenha um retangulo do lado direito, área para plotagem dos dados
-        right_rect = QRectF(self._left_margin, 0.5, self.plot_width+0.5, self.height()-1)
-        painter.fillRect(right_rect, white_color_background)
-        painter.drawRect(right_rect)
+        #Escreve escreve o nome da variavel no lado esquerdo
+        self._draw_vertical_text_up(painter, self._left_margin/3, self.height()-15,self._header_key)
 
         #Escreve no canto inferior esquero da area de plotagem os valores mínimo e máximo dos dados
         font = QFont("Arial", 7, QFont.Weight.Bold) #Vai para a configuracao
         painter.setFont(font)
         texto = f"Min: {self._minimum_value:.2f} - Max: {self._maximum_value:.2f}"
-        painter.drawText(right_rect, Qt.AlignRight | Qt.AlignBottom, texto)
+        painter.drawText(self.right_rect, Qt.AlignRight | Qt.AlignBottom, texto)
 
         painter.restore()
 
@@ -173,7 +163,7 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         self._draw_y_axis(painter)
         self._draw_y_grid(painter)
-        if self._mouse_tracking_on:
+        if self.mouse_tracking_on:
             self._draw_trackin_lines(painter)
 
 
@@ -703,13 +693,21 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         painter.restore()
 
     def _draw_trackin_lines(self, painter):
+        # Configura a caneta (cor vermelha, espessura 1, linha tracejada)
+        pen = QPen(QColor("#ff4757"), 1, Qt.DashLine)
+        painter.setPen(pen)
         if self._mouse_pos is not None:
-            # Configura a caneta (cor vermelha, espessura 1, linha tracejada)
-            pen = QPen(QColor("#ff4757"), 1, Qt.DashLine)
-            painter.setPen(pen)
-
             # Desenha a linha horizontal (da esquerda até a direita na altura Y do mouse)
-            painter.drawLine(self._left_margin - 5, self._mouse_pos.y(), self.width(), self._mouse_pos.y())
+
+            painter.drawLine(self._left_margin - 5, self._mouse_pos.y(), self.plot_width + self._left_margin, self._mouse_pos.y())
 
             # Desenha a linha vertical (do topo até a base na largura X do mouse)
             painter.drawLine(self._mouse_pos.x(), 0, self._mouse_pos.x(), self.height())
+
+        else:
+
+            if self.viewport.trace_under_mouse_position is not None:
+                # Desenha a linha vertical (do topo até a base na largura X do mouse)
+                _mouse_pos_x = self.trace_to_x(self.viewport.trace_under_mouse_position)
+                painter.drawLine(_mouse_pos_x, 0, _mouse_pos_x, self.height())
+

@@ -30,7 +30,8 @@ Histórico:
        11/09/2026 - Criacão do Widget
 ===============================================================================
 """
-
+from PySide6.QtCore import QRectF
+from PySide6.QtGui import QPainter, QColor
 from PySide6.QtWidgets import QWidget
 from segy_viewer.application.seismic_data_window import SeismicViewport
 
@@ -64,6 +65,9 @@ class HSynchronizedSeismicDataWidget(QWidget):
         # garantir que permaneçam horizontalmente alinhados.
         self._left_margin: float = 55.0
         self._right_margin: float = 5.0
+
+        self._mouse_tracking_on:bool = False
+
 
     # ======================================================================
     # Viewport
@@ -193,6 +197,15 @@ class HSynchronizedSeismicDataWidget(QWidget):
         """
         return self.trace_spacing
 
+
+    # Asssim pode ser configurável mostrar ou nao as linhas do tracking
+    @property
+    def mouse_tracking_on(self):
+        return self._mouse_tracking_on
+    @mouse_tracking_on.setter
+    def mouse_tracking_on(self, value):
+        self._mouse_tracking_on = value
+
     # ======================================================================
     # Trace coordinates
     # ======================================================================
@@ -225,9 +238,7 @@ class HSynchronizedSeismicDataWidget(QWidget):
         if not self.plot_left <= x < self.plot_right:
             return None
 
-        local_position = int(
-            (x - self.plot_left) / self.x_scale
-        )
+        local_position = int( (x - self.plot_left) / self.x_scale )
 
         if not 0 <= local_position < self.trace_count:
             return None
@@ -269,7 +280,6 @@ class HSynchronizedSeismicDataWidget(QWidget):
     # ======================================================================
     # Refresh
     # ======================================================================
-
     def refresh(self) -> None:
         """
         Solicita o redesenho do widget.
@@ -279,3 +289,14 @@ class HSynchronizedSeismicDataWidget(QWidget):
         """
 
         self.update()
+
+    def draw_boxes_xy_axes_fill_color(self, painter: QPainter, color_background: QColor) -> None:
+        # Desenha um retantulo ao lado esquero, area para plotagem do eixo Y
+        self.left_rect = QRectF(0.5, 0.5, self._left_margin - 0.5, self.height() - 1)
+        painter.fillRect(self.left_rect, color_background)
+        painter.drawRect(self.left_rect)
+
+        # Desenha um retangulo do lado direito, área para plotagem dos dados
+        self.right_rect = QRectF(self._left_margin, 0.5, self.plot_width, self.height() - 1)
+        painter.fillRect(self.right_rect, color_background)
+        painter.drawRect(self.right_rect)

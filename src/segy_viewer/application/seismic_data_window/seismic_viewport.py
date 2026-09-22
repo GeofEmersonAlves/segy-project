@@ -39,3 +39,10 @@ class SeismicViewport:
 
     time_min_ms: float = 0.0
     time_max_ms: float | None = None
+
+    @property
+    def selected_trace_number(self) -> int | None:
+        if self.selected_trace is None:
+            return None
+
+        return self.selected_trace + 1
