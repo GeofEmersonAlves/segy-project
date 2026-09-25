@@ -12,7 +12,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         painter = QPainter(self)
         painter.save()
 
-        _color_background = QColor("#747C4B")
+        _color_background =  QColor(255, 255, 255)
         # Desenha um retantulo preenchido na area do widget
         self.draw_boxes_xy_axes_fill_color(painter, _color_background)
 

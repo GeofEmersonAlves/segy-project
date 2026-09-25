@@ -40,12 +40,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
         self._displayed_headers: dict[str, str] = {"FFID": "FIELD_RECORD_NO",
                                                    "TRC":"TRACE_SEQ_REEL",
                                                    "CHAN": "CHANNEL_NO"}
-       #  {"FFID": "FIELD_RECORD_NO",
-       #  "SP": "SHOT_POINT_NO",
-       #  "CHAN": "CHANNEL_NO",
-       #  "CMP":"CMP_NO",
-       #  "TRC": "TRACE_SEQ_REEL"
-       # }
+
         self._trace_positions: NDArray[np.int64] = np.empty(0, dtype=np.int64)
         self._trace_indices: NDArray[np.int64] = np.empty(0, dtype=np.int64)
         self._header_values: dict[str, NDArray] = {}
@@ -94,11 +89,10 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
                                 for key, values in header_values.items()
                              }
 
-        self._position_to_array_index = {
-            int(trace_position): array_index
-            for array_index, trace_position
-            in enumerate(self._trace_positions)
-         }
+        self._position_to_array_index = {int(trace_position): array_index
+                                         for array_index, trace_position
+                                         in enumerate(self._trace_positions)
+                                        }
         # print(self._header_values)
         self.update()
 
@@ -187,7 +181,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
         white_color_background = QColor(255, 255, 255)
         # Desenha um retantulo preenchido na area do widget
         self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
-        self._draw_header_labels(painter)
+        self._draw_header_labels(painter) #Escreve do lado esquedo o label dos header exibidos
         painter.restore()
 
         painter.save()
@@ -334,8 +328,8 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
                 # -----------------------------------------------------
                 tick_height = 4.0
 
-                painter.drawLine(QPointF(x, row_bottom - tick_height),
-                                 QPointF(x, row_bottom))
+                painter.drawLine(QPointF(x+2, row_bottom - tick_height),
+                                 QPointF(x+2, row_bottom))
 
                 painter.restore()
 
@@ -378,7 +372,6 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
                 continue
 
             value = values[array_index]
-
             row_top = row * self.ROW_HEIGHT
             row_bottom = (row + 1) * self.ROW_HEIGHT
 
@@ -397,8 +390,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
             painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter,  str(value))
 
             # Tick na mesma posição X
-            painter.drawLine(QPointF( x, row_bottom - tick_height),
-                             QPointF( x, row_bottom)
-                         )
+            painter.drawLine(QPointF( x+2, row_bottom - tick_height),
+                             QPointF( x+2, row_bottom))
 
         painter.restore()

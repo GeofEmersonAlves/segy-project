@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (QMainWindow, QSplitter, QStatusBar,
                                QLabel, QToolBar, QComboBox, QWidget, QDialog)
 from segy_viewer import AppConfig
 from segy_viewer.presentation.desktop.windows import SeismicDataWindow
-from segy_viewer.presentation.desktop.windows.seismic_data_window_factory import SeismicDataWindowFactory
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_factory import SeismicDataWindowFactory
 from segy_viewer.resources import resource_path
 
 

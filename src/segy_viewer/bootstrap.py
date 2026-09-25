@@ -19,7 +19,7 @@ Histórico:
 from pathlib import Path
 from segy_viewer import AppConfig
 from segy_viewer.presentation.desktop import MainWindow
-from segy_viewer.presentation.desktop.windows.seismic_data_window_factory import SeismicDataWindowFactory
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_factory import SeismicDataWindowFactory
 from segy_viewer.presentation.desktop.widgets import SegyFileInspector, SegyFileBrowser
 from segy_viewer.presentation.desktop.tools import SegyTools
 from segy_viewer.application.use_cases import SegyFileInspectorUseCases

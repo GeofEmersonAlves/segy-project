@@ -17,6 +17,9 @@ Histórico:
        21/09/2026 - Criação do signal mouseTraceSelected
        21/09/2026 - Seleção de traço com o click do mouse
        21/09/2026 - Mostra o valor do Header ao lado do ponto no traco selecionado
+       22/09/2026 - Correções de sincronismo horizontal, pequeno erro apareceu depois
+                que o widget TraceHeaderView ficou pronto.
+       22/09/2026 - Finalização com todas as funcionalidades prontas
 ===============================================================================
 """
 import numpy as np

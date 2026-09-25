@@ -2,7 +2,7 @@
 """
 ===============================================================================
 Projeto    : segy-project
-Arquivo    : seismic_display_state.py
+Arquivo    : seismic_data_window_config.py
 Autor      : Emerson Alves da Silva
 Versão     : 1.0
 Python     : Python 3.12.13 | packaged by Anaconda, Inc.
