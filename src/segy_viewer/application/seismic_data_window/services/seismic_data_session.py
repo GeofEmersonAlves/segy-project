@@ -86,7 +86,6 @@ class SeismicDataSession:
         # Verifica se o bloco atualmente carregado ainda atende
         # completamente ao viewport.
         # --------------------------------------------------------------
-
         if self._current_block_contains_viewport(viewport):
             return self._current_data_block
 

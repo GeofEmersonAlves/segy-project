@@ -34,20 +34,24 @@ Histórico:
        09/09/2026 - Estrutura inicial da Seismic Data Window
        13/09/2026 - Construção do acesso aos dados contidos nos arquivos Seg-y
        16/09/2026 - Inclusão de labels informativos na statusbar
+       25/09/2026 - Inclusão da classe SeismicDisplaySettings que configura
+              a janela e os HSynchronizedSeismicDataWidget
 ===============================================================================
 """
 from pathlib import Path
 from PySide6.QtCore import Qt, Slot, QSize, QRect
 from PySide6.QtGui import QAction, QIcon, QKeySequence, QCloseEvent, QFontDatabase
-from PySide6.QtWidgets import QMainWindow, QScrollBar, QStatusBar, QToolBar, QVBoxLayout, QWidget, QMessageBox, QLabel, \
-    QSizePolicy
+from PySide6.QtWidgets import (QMainWindow, QScrollBar, QStatusBar, QToolBar,
+                               QVBoxLayout, QWidget, QMessageBox, QLabel, QSizePolicy)
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.application.seismic_data_window.dto import SeismicWindowInfoDTO, SeismicDataBlockDTO
 from segy_viewer.application.seismic_data_window.seismic_data_window_use_cases import SeismicDataWindowUseCases
+from segy_viewer.presentation.desktop.dialogs.seismic_data_window_config_dialog import SeismicDataWindowConfigDialog
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import TraceHeaderView
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import SeismicDataSamplesView
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import TraceAttributeGraphView
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import SeismicDisplaySettings
 from segy_viewer.resources import resource_path
 from segy_viewer import AppConfig
 
@@ -58,7 +62,7 @@ _EXIT_ICON = resource_path("resources/icons/exit.png")
 _DEAD_TRACE_DETECTION_ICON = resource_path("resources/icons/dead_trace_detetion.png")
 _PROCESSING_TOOL_ICON = resource_path("resources/icons/processing_tool.png")
 _DATA_PLOT_PARAMETERS_TOOL_ICON = resource_path("resources/icons/data_plot_parameters.png")
-_DATA_SORT_ORDER_TOOL_ICON = resource_path("resources/icons/data_sort_order.png")
+# _DATA_SORT_ORDER_TOOL_ICON = resource_path("resources/icons/data_sort_order.png")
 _SHOW_TRACES_GRAPH_ORDER_TOOL_ICON = resource_path("resources/icons/show_traces_graph_.png")
 _TRACE_HEADER_INFO_TOOL_ICON = resource_path("resources/icons/trace_header_info.png")
 _MOUSE_TRACKING_ON_TOOL_ICON = resource_path("resources/icons/mouse_tracking_on.png")
@@ -66,7 +70,7 @@ _MOUSE_TRACKING_OFF_TOOL_ICON = resource_path("resources/icons/mouse_tracking_of
 
 class SeismicDataWindow(QMainWindow):
     def __init__(self, path: Path,
-                 config: AppConfig,
+                 app_config: AppConfig,
                  use_cases: SeismicDataWindowUseCases,
                  initial_geometry: QRect | None = None):
 
@@ -74,7 +78,7 @@ class SeismicDataWindow(QMainWindow):
         # ------------------------------------------------------------------
         # Dependencies
         # ------------------------------------------------------------------
-        self._config = config
+        self._app_config = app_config
         self._path = path
         self._use_cases = use_cases
 
@@ -84,7 +88,7 @@ class SeismicDataWindow(QMainWindow):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose,True)
 
         # ------------------------------------------------------------------
-        # Data state
+        # Segy Data state
         # ------------------------------------------------------------------
         self._data_is_open = False
 
@@ -98,40 +102,47 @@ class SeismicDataWindow(QMainWindow):
         self._total_trace_count = 0
 
         # ------------------------------------------------------------------
-        # viewport compartilhado
+        # viewport  e settings compartilhado
         # ------------------------------------------------------------------
-        self._viewport = SeismicViewport(first_trace_position=0, trace_count=300)
+        self._seismic_display_settings = SeismicDisplaySettings()
+        _trace_count = self._seismic_display_settings.number_traces_to_show
 
+        #O viewport inicia com a quantidade de tracos do display settings
+        self._viewport = SeismicViewport(first_trace_position=0, trace_count=_trace_count)
 
-        # Headers mostrados inicialmente no TraceHeaderView.
-        self._displayed_header_keys: tuple[str, ...] = ("CHANNEL_NO","TRACE_SEQ_REEL","FIELD_RECORD_NO")
+        # Headers mostrados inicialmente no TraceHeaderView, estao definidos no display settings
+        self._displayed_header_keys: tuple[str, ...] = tuple(self._seismic_display_settings.header_keys_to_show.values())
 
-        # Header/atributo exibido no gráfico inferior.
-        self._graph_header_keys: tuple[str, ...] = ("ELEV_REC",)
+        # Header/atributo exibido no gráfico inferior, estao definidos no display settings
+        self._graph_header_keys: tuple[str, ...] = self._seismic_display_settings.graph_header_keys_to_show
 
         # Widgets principais. Todos recebem EXATAMENTE o mesmo SeismicViewport.
-        self._mouse_tracking_on = True   #Depois mover para um dataclass de configuracao da janela de dados
-        self._trace_header_view:HSynchronizedSeismicDataWidget = TraceHeaderView(viewport=self._viewport, parent=self)
-        self._seismic_data_samples_view:HSynchronizedSeismicDataWidget = SeismicDataSamplesView(viewport=self._viewport, parent=self)
-        self._trace_attribute_graph_view:HSynchronizedSeismicDataWidget = TraceAttributeGraphView(viewport=self._viewport, parent=self)
+        self._trace_header_view = TraceHeaderView(viewport=self._viewport,
+                                                                                 display_settings=self._seismic_display_settings,
+                                                                                 parent=self)
+        self._seismic_data_samples_view = SeismicDataSamplesView(viewport=self._viewport,
+                                                                                                display_settings=self._seismic_display_settings,
+                                                                                                parent=self)
+        self._trace_attribute_graph_view = TraceAttributeGraphView(viewport=self._viewport,
+                                                                                                  display_settings=self._seismic_display_settings,
+                                                                                                  parent=self)
 
         # Scrollbar - Navegação pelos traços
         self._horizontal_scrollbar =  QScrollBar(Qt.Orientation.Horizontal)
-        self._horizontal_scrollbar.setStyleSheet(self._config.SEISMIC_DATA_WINDOW_SCROLLBAR_STYLE)
+        self._horizontal_scrollbar.setStyleSheet(self._app_config.SEISMIC_DATA_WINDOW_SCROLLBAR_STYLE)
 
         # -------------------------------------------------------------
         # Construção da janela
         # -------------------------------------------------------------
         self._build_ui()
         self._create_actions()
-        self._create_menu_bar()
         self._create_toolbars()
         self._create_status_bar()
         self._configure_window(initial_geometry)
         self._connect_signals()
 
         # ------------------------------------------------------------------
-        # Data - O metodo chama o self.update_scrollbar()
+        # Data - O metodo inicializa a janela fazendo a leitura dos dados
         # ------------------------------------------------------------------
         self._initialize_display()
 
@@ -143,12 +154,9 @@ class SeismicDataWindow(QMainWindow):
         main_layout.setSpacing(0)
 
         # ------------------------------------------------------------------
-        # Trace Header View
+        # Trace Header View - sem altuma mínima e maxima
         # ------------------------------------------------------------------
-        self._trace_header_view.mouse_tracking_on = self._mouse_tracking_on
-        # self._trace_header_view.setMinimumHeight(45)
-        # self._trace_header_view.setMaximumHeight(160)
-
+        self._trace_header_view.setVisible(self._seismic_display_settings.show_trace_headers)
         # ------------------------------------------------------------------
         # Seismic Data Samples View
         # ------------------------------------------------------------------
@@ -157,7 +165,7 @@ class SeismicDataWindow(QMainWindow):
         # ------------------------------------------------------------------
         # Trace Attribute Graph View
         # ------------------------------------------------------------------
-        self._trace_attribute_graph_view.mouse_tracking_on = self._mouse_tracking_on
+        self._trace_attribute_graph_view.setVisible(self._seismic_display_settings.show_attribute_graph)
         self._trace_attribute_graph_view.setMinimumHeight(70)
         self._trace_attribute_graph_view.setMaximumHeight(180)
 
@@ -183,34 +191,23 @@ class SeismicDataWindow(QMainWindow):
                                               toolTip="Processing tools dialog")
 
         #DEMAIS FERRAMENTAS DE PROCESSAMENTO SERÃO IMPLEMENTADAS CONFORME O PROJETO CRESCE
-
         # ------------------------------------------------------------------
         # View toolbar
         # ------------------------------------------------------------------
         self._data_plot_parameters_action = QAction(QIcon(str(_DATA_PLOT_PARAMETERS_TOOL_ICON)), "Processing tools", self,
-                                              toolTip="Processing tools dialog")
-
-        self._data_sort_order_action = QAction(QIcon(str(_DATA_SORT_ORDER_TOOL_ICON)), "Data sort order tools", self,
-                                                    toolTip="Data sort order tool dialog")
+                                              toolTip="Seismic Data Window Settings")
 
         self._show_traces_graph_action = QAction(QIcon(str(_SHOW_TRACES_GRAPH_ORDER_TOOL_ICON)), "Show trace(s) Graph", self,
                                                toolTip="Show trace(s) Graph window")
 
-        self._trace_header_info_action = QAction(QIcon(str(_TRACE_HEADER_INFO_TOOL_ICON)), "Trace Header info", self,
-                                                 toolTip="Trace Header info dialog")
-
         self._mouse_tracking_action = QAction(QIcon(str(_MOUSE_TRACKING_ON_TOOL_ICON)), "Mouse tracking ON/OFF", self,
                                                  toolTip="Mouse tracking ON/OFF")
 
+        self._mouse_tracking_action.setCheckable(True)
+        self._mouse_tracking_action.setChecked(self._seismic_display_settings.mouse_tracking_on)
+
         self._exit_action = QAction(QIcon(str(_EXIT_ICON)), "Exit", self, toolTip="Close Data Seismic Window")
         self._exit_action.setShortcut(QKeySequence("Ctrl+X"))
-
-
-    # ======================================================================
-    # Menu - AINDA TO NA DÚVIDA SE COLOCO MENU OU DEIXO TUDO NAS BARRAS DE FERRAMENTAS
-    # ======================================================================
-    def _create_menu_bar(self):
-        return
 
 
     # ======================================================================
@@ -222,31 +219,25 @@ class SeismicDataWindow(QMainWindow):
         # ------------------------------------------------------------------
         self._main_seismic_tool_bar = QToolBar("Main Seismic Toolbar", self)
         self._main_seismic_tool_bar.setMovable(False)
-        self._main_seismic_tool_bar.setStyleSheet(self._config.SEISMIC_DATA_WINDOW_TOOL_BAR_STYLE)
+        self._main_seismic_tool_bar.setStyleSheet(self._app_config.SEISMIC_DATA_WINDOW_TOOL_BAR_STYLE)
         self._main_seismic_tool_bar.setIconSize(QSize(25, 25))
 
-        self._main_seismic_tool_bar.addAction(self._exit_action)
-        self._main_seismic_tool_bar.addSeparator()
         self._main_seismic_tool_bar.addAction(self._dead_trace_detection_action)
         self._main_seismic_tool_bar.addAction(self._processing_tool_action)
-        self.addToolBar(self._main_seismic_tool_bar)
-        # ------------------------------------------------------------------
-        # View toolbar
-        # ------------------------------------------------------------------
-        self._seismic_view_tool_bar = QToolBar("Seismic View Toolbar", self)
-        self._seismic_view_tool_bar.setMovable(False)
-        self._seismic_view_tool_bar.setStyleSheet(self._config.SEISMIC_DATA_WINDOW_TOOL_BAR_STYLE)
-        self._seismic_view_tool_bar.setIconSize(QSize(25, 25))
+        self._main_seismic_tool_bar.addSeparator()
+        self._main_seismic_tool_bar.addAction(self._data_plot_parameters_action)
+        self._main_seismic_tool_bar.addAction(self._show_traces_graph_action)
 
-        self._seismic_view_tool_bar.addAction(self._data_plot_parameters_action)
-        self._seismic_view_tool_bar.addAction(self._data_sort_order_action)
-        self._seismic_view_tool_bar.addSeparator()
-        self._seismic_view_tool_bar.addAction(self._show_traces_graph_action)
-        self._seismic_view_tool_bar.addAction(self._trace_header_info_action)
-        self._seismic_view_tool_bar.addSeparator()
-        self._seismic_view_tool_bar.addAction(self._mouse_tracking_action)
+        self._main_seismic_tool_bar.addSeparator()
+        self._main_seismic_tool_bar.addAction(self._mouse_tracking_action)
 
-        self.addToolBar(Qt.LeftToolBarArea, self._seismic_view_tool_bar)
+        #Spacer adicionado para manter o botao de saida sempre na parte de baixo da barra de ferramentas
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Preferred,  QSizePolicy.Policy.Expanding)
+        self._main_seismic_tool_bar.addWidget(spacer)
+        self._main_seismic_tool_bar.addAction(self._exit_action)
+
+        self.addToolBar(Qt.LeftToolBarArea, self._main_seismic_tool_bar)
 
 
     # ======================================================================
@@ -261,7 +252,7 @@ class SeismicDataWindow(QMainWindow):
 
         self._status_bar_summary_label = QLabel()
         self._status_bar_summary_label.setFont(_font)
-        self._status_bar_summary_label.setStyleSheet(self._config.SEISMIC_DATA_WINDOW_STATUS_BAR_LABEL_STYLE)
+        self._status_bar_summary_label.setStyleSheet(self._app_config.SEISMIC_DATA_WINDOW_STATUS_BAR_LABEL_STYLE)
 
         self._status_bar_trace_info_label = QLabel()
         # _font.setPointSize(9)
@@ -271,8 +262,6 @@ class SeismicDataWindow(QMainWindow):
 
         self.setStatusBar(status_bar)
         self.statusBar().showMessage("Ready")
-
-
 
     # ======================================================================
     # Window configuration
@@ -303,12 +292,18 @@ class SeismicDataWindow(QMainWindow):
     # Signals
     # ======================================================================
     def _connect_signals(self):
-        self._exit_action.triggered.connect(self.close)
         self._horizontal_scrollbar.valueChanged.connect(self._on_horizontal_scroll)
+
+        #Widgets H Sincronizados
         self._trace_attribute_graph_view.graphMouseMoved.connect(self._update_status_bar_graph_info)
         self._trace_header_view.headerMouseMoved.connect(self._update_status_bar_graph_info)
         self._trace_attribute_graph_view.mouseTraceSelected.connect(self._update_selected_trace)
         self._trace_header_view.mouseTraceSelected.connect(self._update_selected_trace)
+
+        #Actions da Toolbar
+        self._data_plot_parameters_action.triggered.connect(self._open_display_settings)
+        self._mouse_tracking_action.toggled.connect(self._on_mouse_tracking_toggled)
+        self._exit_action.triggered.connect(self.close)
 
 
     # ======================================================================
@@ -382,7 +377,6 @@ class SeismicDataWindow(QMainWindow):
         """
         if not self._data_is_open:
             return
-
         self._data_block = self._use_cases.load_data(viewport=self._viewport,
                                                      header_keys=self._displayed_header_keys,
                                                      graph_header_keys=self._graph_header_keys)
@@ -432,9 +426,7 @@ class SeismicDataWindow(QMainWindow):
     def _update_status_bar_graph_info(self, message: str) -> None:
         self._status_bar_trace_info_label.setText(message)
         #atualiza os Widgets pois a o traco sob o mouse mudou
-        self._trace_attribute_graph_view.refresh()
-        self._trace_header_view.refresh()
-        self._seismic_data_samples_view.refresh()
+        self._refresh_hsynchronized_widgets()
 
     # ======================================================================
     # Trace Selected
@@ -447,9 +439,7 @@ class SeismicDataWindow(QMainWindow):
         else:
             self.statusBar().showMessage(f"Selected trace: {trace_selected}")
 
-        self._trace_attribute_graph_view.refresh()
-        self._trace_header_view.refresh()
-        self._seismic_data_samples_view.refresh()
+        self._refresh_hsynchronized_widgets()
 
 
     # ======================================================================
@@ -468,6 +458,47 @@ class SeismicDataWindow(QMainWindow):
         self._viewport.first_trace_position = first_trace
         self._request_current_data()
 
+    # ======================================================================
+    # Mouse Tracker
+    # ======================================================================
+    @Slot(bool)
+    def _on_mouse_tracking_toggled(self, checked: bool) -> None:
+        self._seismic_display_settings.mouse_tracking_on = checked
+
+        icon_path = (_MOUSE_TRACKING_OFF_TOOL_ICON   if checked
+                else _MOUSE_TRACKING_ON_TOOL_ICON )
+        self._mouse_tracking_action.setIcon(QIcon(str(icon_path)))
+        self._refresh_hsynchronized_widgets()
+
+    def _open_display_settings(self) -> None:
+        dialog = SeismicDataWindowConfigDialog(self._seismic_display_settings, self )
+        dialog.settings_applied.connect(self._on_display_settings_applied )
+        dialog.exec()
+
+    def _on_display_settings_applied(self, trace_count_changed: bool) -> None:
+        any_change=False
+        if trace_count_changed:
+            self._viewport.trace_count = self._seismic_display_settings.number_traces_to_show
+            any_change = True
+
+        _new_header_keys = tuple(self._seismic_display_settings.header_keys_to_show.values())
+        if self._displayed_header_keys!= _new_header_keys:
+            self._displayed_header_keys = _new_header_keys
+            any_change = True
+
+        _new_graph_header_keys = self._seismic_display_settings.graph_header_keys_to_show
+        if self._graph_header_keys != _new_graph_header_keys:
+            self._graph_header_keys = _new_graph_header_keys
+            self._seismic_display_settings.graph_header_keys_to_show = _new_graph_header_keys
+            any_change = True
+
+        self._trace_header_view.setVisible(self._seismic_display_settings.show_trace_headers)
+        self._trace_attribute_graph_view.setVisible(self._seismic_display_settings.show_attribute_graph)
+        if any_change:
+            self._data_block = None #Para forçar a leitura dos dados novamente
+            self._request_current_data()
+
+        self._refresh_hsynchronized_widgets()
 
     # ======================================================================
     # Change visible trace count

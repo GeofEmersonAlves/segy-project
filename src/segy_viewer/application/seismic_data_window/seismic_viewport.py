@@ -31,7 +31,7 @@ class SeismicViewport:
                             não representa o indice físico do traço dentro do arquivo.
     """
     first_trace_position: int = 0
-    trace_count: int = 300
+    trace_count: int = 0
 
     selected_trace: int | None = None
     trace_under_mouse_position: int | None = None

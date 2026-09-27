@@ -28,12 +28,15 @@ Descrição:
 
 Histórico:
        11/09/2026 - Criacão do Widget
+       25/09/2026 - Inclusão da classe SeismicDisplaySettings que configura a janela e os HSynchronizedSeismicDataWidget
 ===============================================================================
 """
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QPainter, QColor
 from PySide6.QtWidgets import QWidget
 from segy_viewer.application.seismic_data_window import SeismicViewport
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import SeismicDisplaySettings
+
 
 class HSynchronizedSeismicDataWidget(QWidget):
     """
@@ -55,18 +58,17 @@ class HSynchronizedSeismicDataWidget(QWidget):
     um sistema vertical diferente.
     """
 
-    def __init__(self, viewport: SeismicViewport, parent=None):
+    def __init__(self, viewport: SeismicViewport, display_settings: SeismicDisplaySettings, parent=None):
         super().__init__(parent)
 
         self._viewport = viewport
+        self._display_settings = display_settings
 
         # Margens horizontais comuns à área de visualização.
         # É importante que os widgets sincronizados utilizem os mesmos valores para
         # garantir que permaneçam horizontalmente alinhados.
         self._left_margin: float = 55.0
         self._right_margin: float = 5.0
-
-        self._mouse_tracking_on:bool = False
 
 
     # ======================================================================
@@ -78,6 +80,10 @@ class HSynchronizedSeismicDataWidget(QWidget):
         Retorna o viewport compartilhado pela Seismic Data Window.
         """
         return self._viewport
+
+    @property
+    def display_settings(self) -> SeismicDisplaySettings:
+        return self._display_settings
 
     @property
     def first_trace_position(self) -> int:
@@ -196,15 +202,6 @@ class HSynchronizedSeismicDataWidget(QWidget):
         Escala horizontal em pixels por posição de visualização.
         """
         return self.trace_spacing
-
-
-    # Asssim pode ser configurável mostrar ou nao as linhas do tracking
-    @property
-    def mouse_tracking_on(self):
-        return self._mouse_tracking_on
-    @mouse_tracking_on.setter
-    def mouse_tracking_on(self, value):
-        self._mouse_tracking_on = value
 
     # ======================================================================
     # Trace coordinates

@@ -42,7 +42,7 @@ class TraceDrawingMode(Enum):
 @dataclass
 class SeismicDisplaySettings:
     trace_drawing_mode: TraceDrawingMode = TraceDrawingMode.WIGGLE
-    number_traces_to_show: int = 300
+    number_traces_to_show: int = 600
     mouse_tracking_on: bool = False
 
     #Opcies para o TraceHeaderView
@@ -54,13 +54,19 @@ class SeismicDisplaySettings:
     #Opcoes para o AttributeGraphView
     show_attribute_graph: bool = True
     graph_header_keys_to_show: tuple[str, ...] = (AVAILABLE_GRAPH_HEADERS[0],)
-    keep_yaxis_on_zero: bool = False
-    show_min_max_values: bool = True
-    show_point: bool = True
-    point_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.darkRed)) #evita que instâncias diferentes compartilhem o mesmo objeto
-    show_lines: bool = True
-    line_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.darkBlue) ) #evita que instâncias diferentes compartilhem o mesmo objeto
+    keep_graph_y_axis_on_zero: bool = False
+    show_graph_min_max_values: bool = True
+    plot_graph_point: bool = True
+    graph_point_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.darkRed)) #evita que instâncias diferentes compartilhem o mesmo objeto
+    plot_graph_line: bool = True
+    graph_line_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.darkBlue)) #evita que instâncias diferentes compartilhem o mesmo objeto
 
 
+    def _headers_from_keys(self, header_keys: tuple[str, ...]) -> dict[str, str]:
+        labels_by_key = {key: label  for label, key in AVAILABLE_HEADERS.items() }
+
+        return {labels_by_key[key]: key
+                 for key in header_keys
+               }
 
 

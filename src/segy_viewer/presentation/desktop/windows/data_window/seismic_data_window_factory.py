@@ -47,6 +47,6 @@ class SeismicDataWindowFactory:
         # Presentation
         # --------------------------------------------------------------
         return SeismicDataWindow(path=path,
-                                 config=config,
+                                 app_config=config,
                                  use_cases=use_cases,
                                  initial_geometry=initial_geometry)

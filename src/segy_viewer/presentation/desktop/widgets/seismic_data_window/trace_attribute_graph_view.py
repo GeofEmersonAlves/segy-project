@@ -20,6 +20,7 @@ Histórico:
        22/09/2026 - Correções de sincronismo horizontal, pequeno erro apareceu depois
                 que o widget TraceHeaderView ficou pronto.
        22/09/2026 - Finalização com todas as funcionalidades prontas
+       26/09/2026 - Inclusão da leitura das configuracoes para o grafico no SeismicDataWindowConfig
 ===============================================================================
 """
 import numpy as np
@@ -29,7 +30,7 @@ from PySide6.QtGui import QPainter, QPaintEvent, Qt, QPen, QColor, QFont
 from PySide6.QtWidgets import QWidget
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
-
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import SeismicDisplaySettings
 
 class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
     #signal emitido quando o mouse massa pelo grafico
@@ -37,8 +38,8 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
     #Signal emitido quando o usuário clicar em um traco
     mouseTraceSelected = Signal(object)
 
-    def __init__(self,  viewport: SeismicViewport,   parent: QWidget | None = None):
-        super().__init__(viewport=viewport, parent=parent)
+    def __init__(self,  viewport: SeismicViewport, display_settings: SeismicDisplaySettings , parent: QWidget | None = None):
+        super().__init__(viewport=viewport, display_settings=display_settings, parent=parent)
 
         self._mouse_pos = None #Posição do mouse para fazer o Mouse Tracker
         self.setMouseTracking(True)
@@ -51,7 +52,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         self._header_values : np.ndarray = np.empty(0, dtype=np.int64)
         self._position_to_array_index: dict[int, int] = {}
 
-        self._y_axis_zero_fixed: bool = False  #Mantém o ínicio do eixo X fixo no zero, se Falso o inicio depende do _minimum_value
         self._y_tick_interval: float = 1.0
 
         self._minimum_value: float | None = None
@@ -82,12 +82,10 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
             return
 
         trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
-
         if not 0 <= array_index < len(self._header_values):
             return
 
         header_value = float(self._header_values[array_index])
-
         inverse_transform, ok = self._transform.inverted()
         if not ok:
             return
@@ -98,7 +96,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         #Atualiza o viewport com o traco atual sob o ponteiro do mouse
         self.viewport.trace_under_mouse_position = trace_index
         self.graphMouseMoved.emit(mouse_text)
-
 
     def mousePressEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:
@@ -116,14 +113,11 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
             return
 
         trace_index = int(self._trace_indices[array_index])  #Numero do traço dentro do arquivo
-        # header_value = float( self._header_values[array_index])
-
         if self.viewport.selected_trace == trace_index:
             trace_index = None
 
         self.viewport.selected_trace = trace_index
         self.mouseTraceSelected.emit(self.viewport.selected_trace_number)
-
 
     def leaveEvent(self, event):
         # Limpa as linhas quando o mouse sai do widget
@@ -134,7 +128,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
     
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
-        painter.save()
 
         #Desenha um retantulo preenchido na area do widget
         white_color_background = QColor(255, 255, 255)
@@ -143,21 +136,13 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         #Escreve escreve o nome da variavel no lado esquerdo
         self._draw_vertical_text_up(painter, self._left_margin/3, self.height()-15,self._header_key)
 
-        #Escreve no canto inferior esquero da area de plotagem os valores mínimo e máximo dos dados
-        font = QFont("Arial", 7, QFont.Weight.Bold) #Vai para a configuracao
-        painter.setFont(font)
-        texto = f"Min: {self._minimum_value:.2f} - Max: {self._maximum_value:.2f}"
-        painter.drawText(self.right_rect, Qt.AlignRight | Qt.AlignBottom, texto)
-
-        painter.restore()
-
         painter.save()
         # O clipping restringe os dados à área à direita do eixo Y.
         painter.setClipRect(QRectF(self.plot_left,
                                    self._top_margin,
                                    self.plot_width,
                                    self.height()  - self._top_margin - self._bottom_margin,
-                                  )
+                                   )
                             )
         if self._create_cartesian_coord_system(painter):
             self._plot_header_values(painter=painter)
@@ -166,7 +151,15 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         self._draw_y_axis(painter)
         self._draw_y_grid(painter)
-        if self.mouse_tracking_on:
+
+        # Escreve no canto inferior esquero da area de plotagem os valores mínimo e máximo dos dados
+        if self._display_settings.show_graph_min_max_values:
+            font = QFont("Arial", 8, QFont.Weight.Bold)  # Vai para a configuracao
+            painter.setFont(font)
+            texto = f"Min: {self._minimum_value:.2f} - Max: {self._maximum_value:.2f}"
+            painter.drawText(self.right_rect, Qt.AlignRight | Qt.AlignBottom, texto)
+
+        if self.display_settings.mouse_tracking_on:
             self._draw_trackin_lines(painter)
 
 
@@ -223,8 +216,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
                                                 self._trace_positions
                                             )
                                         }
-        # print(self._graph_header_values)
-
         self._minimum_value = None
         self._maximum_value = None
 
@@ -297,7 +288,7 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         if minimum_value > maximum_value:
             minimum_value, maximum_value = (maximum_value, minimum_value)
 
-        if self._y_axis_zero_fixed:
+        if self._display_settings.keep_graph_y_axis_on_zero:
             provisional_minimum = 0.0
         else:
             provisional_minimum = minimum_value
@@ -314,7 +305,7 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         tick_interval = self._calculate_nice_interval(data_range / desired_interval_count)
 
-        if self._y_axis_zero_fixed:
+        if self._display_settings.keep_graph_y_axis_on_zero:
             # Mantém o zero ligeiramente acima da borda inferior.
             bottom_padding = tick_interval * 0.25
             y_axis_minimum = -bottom_padding
@@ -402,7 +393,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         painter.drawText(0, 0, text)
         painter.restore()
 
-
     def _draw_y_axis(self, painter: QPainter) -> None:
         if self._minimum_value is None:
             return
@@ -429,7 +419,7 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         # --------------------------------------------------------------
         # Linha principal do eixo Y
         # --------------------------------------------------------------
-        axis_pen = QPen(QColor("#202020"))
+        axis_pen = QPen(QColor("#202020")) #cinza muito escuro, quase preto
         axis_pen.setWidthF(1.0)
         axis_pen.setCosmetic(True)
         painter.setPen(axis_pen)
@@ -626,11 +616,10 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         painter.restore()
 
     def _plot_header_values(self, painter : QPainter):
-        point_pen = QPen(Qt.GlobalColor.darkRed) #Vai para a configuracao
-        # point_pen.setWidthF(4.0)
+        point_pen = QPen(self._display_settings.graph_point_color)
         point_pen.setCosmetic(True)
         point_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        # painter.setPen(point_pen)
+
 
         points = []
         for trace_position, header_value in zip(self._trace_positions, self._header_values):
@@ -639,33 +628,35 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
             array_index = self._position_to_array_index.get(trace_position)
             if array_index is None:
                 return
-
-            #Destaca o traco selecionado
-            trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
-            if trace_index == self.viewport.selected_trace:
-                point_pen.setColor(Qt.GlobalColor.darkBlue)
-                point_pen.setWidthF(8.0)
-            else:
-                point_pen.setColor(Qt.GlobalColor.darkRed)
-                point_pen.setWidthF(4.0)
-            painter.setPen(point_pen)
-
             point = QPointF(float(trace_position), float(header_value))
-            painter.drawPoint(point) #Vai para a configuracao
             points.append(point)
+
+            #Verifica se esta configurado para plotar os pontos
+            if self._display_settings.plot_graph_point:
+                #Plota os pontos e destaca o ponto do traco selecionado
+                trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
+                if trace_index == self.viewport.selected_trace:
+                    point_pen.setColor(Qt.GlobalColor.darkBlue)
+                    point_pen.setWidthF(8.0)
+                else:
+                    point_pen.setColor(self._display_settings.graph_point_color)
+                    point_pen.setWidthF(4.0)
+                painter.setPen(point_pen)
+                painter.drawPoint(point)
 
             #Mostra o valor do Header value ao lado do ponto no Traco selecionado
             if trace_position == self.viewport.selected_trace:
                 self._draw_header_value(painter, point, header_value)
 
-
-        line_pen = QPen(Qt.GlobalColor.darkBlue) #Vai para a configuracao
-        line_pen.setWidthF(1.0)
-        line_pen.setStyle(Qt.PenStyle.SolidLine)
-        line_pen.setCosmetic(True)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.setPen(line_pen)
-        painter.drawPolyline(points) #Vai para a configuracao
+        #Verifica se esta configurado para plotar a linha
+        if self._display_settings.plot_graph_line:
+            line_pen = QPen(self._display_settings.graph_line_color)
+            line_pen.setWidthF(1.0)
+            line_pen.setStyle(Qt.PenStyle.SolidLine)
+            line_pen.setCosmetic(True)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            painter.setPen(line_pen)
+            painter.drawPolyline(points)
 
     def _draw_header_value(self, painter : QPainter, point:QPointF, header_value: float) -> None:
         screen_point = painter.transform().map(point)

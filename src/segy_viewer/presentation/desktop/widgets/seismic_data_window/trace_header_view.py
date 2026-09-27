@@ -17,6 +17,7 @@ Histórico:
        09/09/2026 - Inicio da implementação do método paintEvent()
        21/09/2026 - Retomada do widget depois da decisao de criar o HSynchronizedSeismicDataWidget
        22/09/2026 - Finalização com todas as funcionalidades prontas
+       26/09/2026 - Inclusão da leitura das configuracoes para o grafico no SeismicDataWindowConfig
 ===============================================================================
 """
 import numpy as np
@@ -26,6 +27,8 @@ from numpy._typing import NDArray
 
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import SeismicDisplaySettings
+
 
 class TraceHeaderView(HSynchronizedSeismicDataWidget):
     ROW_HEIGHT = 20
@@ -34,12 +37,10 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
     # Signal emitido quando o usuário clicar em um traco
     mouseTraceSelected = Signal(object)
 
-    def __init__(self, viewport: SeismicViewport, parent=None):
-        super().__init__(viewport=viewport,parent=parent)
+    def __init__(self, viewport: SeismicViewport, display_settings: SeismicDisplaySettings, parent=None):
+        super().__init__(viewport=viewport, display_settings=display_settings, parent=parent)
 
-        self._displayed_headers: dict[str, str] = {"FFID": "FIELD_RECORD_NO",
-                                                   "TRC":"TRACE_SEQ_REEL",
-                                                   "CHAN": "CHANNEL_NO"}
+        self._displayed_headers: dict[str, str] = self.display_settings.header_keys_to_show
 
         self._trace_positions: NDArray[np.int64] = np.empty(0, dtype=np.int64)
         self._trace_indices: NDArray[np.int64] = np.empty(0, dtype=np.int64)
@@ -48,7 +49,6 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
         self._position_to_array_index: dict[int, int] = {}
 
         self._mouse_pos = None  # Posição do mouse para fazer o Mouse Tracker
-        self._mouse_tracking_on = True  # Asssim pode ser configurável mostrar ou nao as linhas do tracking
         self.setMouseTracking(True)
 
         self._update_view_height()
@@ -56,6 +56,8 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
     def set_data(self, trace_positions: NDArray[np.int64],
                        trace_indices: NDArray[np.int64],
                        header_values: dict[str, NDArray]) -> None:
+
+        self._displayed_headers = self.display_settings.header_keys_to_show
 
         trace_positions = np.asarray(trace_positions, dtype=np.int64)
         trace_indices = np.asarray(trace_indices, dtype=np.int64)
@@ -94,6 +96,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
                                          in enumerate(self._trace_positions)
                                         }
         # print(self._header_values)
+        self._update_view_height()
         self.update()
 
     @property
@@ -191,7 +194,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
 
         painter.restore()
 
-        if self.mouse_tracking_on:
+        if self.display_settings.mouse_tracking_on:
             self._draw_trackin_lines(painter)
 
     def _draw_trackin_lines(self, painter):
