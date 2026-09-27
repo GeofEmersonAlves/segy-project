@@ -25,10 +25,10 @@ from PySide6.QtGui import QColor
 AVAILABLE_HEADERS = {"FFID": "FIELD_RECORD_NO",
                      "CHAN": "CHANNEL_NO",
                      "TRC": "TRACE_SEQ_REEL",
-                     "SP": "SHOT_POINT_NO",
-                     "CMP":"CMP_NO",
-                     "INLI":"INLINE",
-                     "CROS": "CROSSLINE"}
+                     "SP_NO": "SHOT_POINT_NO",
+                     "CMP_NO":"CMP_NO",
+                     "INLINE":"INLINE",
+                     "CROSSL": "CROSSLINE"}
 
 AVAILABLE_GRAPH_HEADERS =("ELEV_REC","ELEV_SHOT","DEPTH_SHOT",
                           "ELEV_FLOATDATUM_REC","ELEV_FLOATDATUM_SHOT",

@@ -12,10 +12,9 @@ Descrição:
 
 Histórico:
        25/09/2026 - Implementação do Dialog
+       26/29/2026 - Finalização do layout e funcionalidades
 ===============================================================================
 """
-from pydoc import text
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QCheckBox, QColorDialog, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGroupBox,
@@ -27,8 +26,6 @@ from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_co
                                                                                              AVAILABLE_HEADERS,
                                                                                              SeismicDisplaySettings,
                                                                                              TraceDrawingMode)
-
-
 class SeismicDataWindowConfigDialog(QDialog):
     """
     Permite editar as configurações da Seismic Data Window.
@@ -176,7 +173,7 @@ class SeismicDataWindowConfigDialog(QDialog):
         if index >= 0:
             self._drawing_mode_combo.setCurrentIndex(index)
 
-        layout.addRow("Dwawing mode:", self._drawing_mode_combo)
+        layout.addRow("Drawing mode:", self._drawing_mode_combo)
 
         return tab
 
@@ -231,7 +228,7 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         self._add_separator(layout)
 
-        self._show_lines_checkbox = QCheckBox("Plot line")
+        self._show_lines_checkbox = QCheckBox("Plot lines")
         self._show_lines_checkbox.setChecked(self._settings.plot_graph_line)
 
         self._line_color_button = QPushButton()

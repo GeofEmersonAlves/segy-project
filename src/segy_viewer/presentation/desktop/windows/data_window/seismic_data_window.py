@@ -46,8 +46,7 @@ from PySide6.QtWidgets import (QMainWindow, QScrollBar, QStatusBar, QToolBar,
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.application.seismic_data_window.dto import SeismicWindowInfoDTO, SeismicDataBlockDTO
 from segy_viewer.application.seismic_data_window.seismic_data_window_use_cases import SeismicDataWindowUseCases
-from segy_viewer.presentation.desktop.dialogs.seismic_data_window_config_dialog import SeismicDataWindowConfigDialog
-from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
+from segy_viewer.presentation.desktop.dialogs import SeismicDataWindowConfigDialog
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import TraceHeaderView
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import SeismicDataSamplesView
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import TraceAttributeGraphView
@@ -62,7 +61,6 @@ _EXIT_ICON = resource_path("resources/icons/exit.png")
 _DEAD_TRACE_DETECTION_ICON = resource_path("resources/icons/dead_trace_detetion.png")
 _PROCESSING_TOOL_ICON = resource_path("resources/icons/processing_tool.png")
 _DATA_PLOT_PARAMETERS_TOOL_ICON = resource_path("resources/icons/data_plot_parameters.png")
-# _DATA_SORT_ORDER_TOOL_ICON = resource_path("resources/icons/data_sort_order.png")
 _SHOW_TRACES_GRAPH_ORDER_TOOL_ICON = resource_path("resources/icons/show_traces_graph_.png")
 _TRACE_HEADER_INFO_TOOL_ICON = resource_path("resources/icons/trace_header_info.png")
 _MOUSE_TRACKING_ON_TOOL_ICON = resource_path("resources/icons/mouse_tracking_on.png")
