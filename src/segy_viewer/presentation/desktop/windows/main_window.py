@@ -316,7 +316,7 @@ class MainWindow(QMainWindow):
         self._tile_vertical_action.triggered.connect(self._tile_seismic_windows_vertically)
         self._maximize_all_windows_action.triggered.connect(self._maximize_seismic_windows)
         self._close_all_windows_action.triggered.connect(self._close_all_seismic_windows)
-        # self._list_seismic_windows_action.triggered.connect(self._show_seismic_windows_list)
+
 
     @Slot(str)
     def _inspector_section_changed(self, section:str)->None:

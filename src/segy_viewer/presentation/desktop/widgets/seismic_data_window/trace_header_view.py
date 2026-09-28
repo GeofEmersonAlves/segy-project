@@ -21,9 +21,9 @@ Histórico:
 ===============================================================================
 """
 import numpy as np
+from numpy._typing import NDArray
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QPaintEvent, QPainter, Qt, QColor, QPen, QFont, QBrush
-from numpy._typing import NDArray
 
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
@@ -42,8 +42,6 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
 
         self._displayed_headers: dict[str, str] = self.display_settings.header_keys_to_show
 
-        self._trace_positions: NDArray[np.int64] = np.empty(0, dtype=np.int64)
-        self._trace_indices: NDArray[np.int64] = np.empty(0, dtype=np.int64)
         self._header_values: dict[str, NDArray] = {}
         # Mapeia trace_position -> índice nos arrays carregados
         self._position_to_array_index: dict[int, int] = {}
@@ -52,6 +50,27 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
         self.setMouseTracking(True)
 
         self._update_view_height()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.save()
+
+        white_color_background = QColor(255, 255, 255)
+        # Desenha um retantulo preenchido na area do widget
+        self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
+
+        self._draw_header_labels(painter) #Escreve do lado esquedo o label dos header exibidos
+        painter.restore()
+
+        painter.save()
+        self._create_cartesian_coord_system(painter)
+        self._draw_header_values(painter)
+        self._draw_selected_trace_header_values(painter)
+
+        painter.restore()
+
+        if self.display_settings.mouse_tracking_on:
+            self._draw_trackin_lines(painter)
 
     def set_data(self, trace_positions: NDArray[np.int64],
                        trace_indices: NDArray[np.int64],
@@ -177,25 +196,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
         self.headerMouseMoved.emit("")
         self.update()
 
-    def paintEvent(self, event: QPaintEvent) -> None:
-        painter = QPainter(self)
-        painter.save()
 
-        white_color_background = QColor(255, 255, 255)
-        # Desenha um retantulo preenchido na area do widget
-        self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
-        self._draw_header_labels(painter) #Escreve do lado esquedo o label dos header exibidos
-        painter.restore()
-
-        painter.save()
-        self._create_cartesian_coord_system(painter)
-        self._draw_header_values(painter)
-        self._draw_selected_trace_header_values(painter)
-
-        painter.restore()
-
-        if self.display_settings.mouse_tracking_on:
-            self._draw_trackin_lines(painter)
 
     def _draw_trackin_lines(self, painter):
         # Configura a caneta (cor vermelha, espessura 1, linha tracejada)

@@ -13,6 +13,7 @@ Descrição:
 Histórico:
        24/09/2026 - Início da implementação
        25/09/2026 - Correcoes
+       27/09/2026 - Criação das configurações apara o desenho do traço sísmico
 ===============================================================================
 """
 from dataclasses import dataclass, field
@@ -34,14 +35,18 @@ AVAILABLE_GRAPH_HEADERS =("ELEV_REC","ELEV_SHOT","DEPTH_SHOT",
                           "ELEV_FLOATDATUM_REC","ELEV_FLOATDATUM_SHOT",
                           "WATER_DEPTH_SHOT","WATER_DEPTH_REC")
 
-class TraceDrawingMode(Enum):
-    WIGGLE = "wiggle"
-    VARIABLE_AREA = "variable_area"
+class TRACEDRAWINGMODES(Enum):
+    WIGGLE = "Wiggle Trace"
+    VARIABLE_AREA = "Variable Area"
+    WIGGLE_VARIABLE_AREA = "Wiggle/Variable Area"
+    VARIABLE_DENSITY = "Variable Density"
+    WIGGLE_VARIABLE_DENSITY = "Wiggle/Variable Density"
+
 
 
 @dataclass
 class SeismicDisplaySettings:
-    trace_drawing_mode: TraceDrawingMode = TraceDrawingMode.WIGGLE
+    trace_drawing_mode: TRACEDRAWINGMODES = TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA.name
     number_traces_to_show: int = 600
     mouse_tracking_on: bool = False
 

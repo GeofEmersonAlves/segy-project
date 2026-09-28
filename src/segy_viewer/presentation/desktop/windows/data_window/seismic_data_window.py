@@ -116,14 +116,14 @@ class SeismicDataWindow(QMainWindow):
 
         # Widgets principais. Todos recebem EXATAMENTE o mesmo SeismicViewport.
         self._trace_header_view = TraceHeaderView(viewport=self._viewport,
-                                                                                 display_settings=self._seismic_display_settings,
-                                                                                 parent=self)
+                                                  display_settings=self._seismic_display_settings,
+                                                  parent=self)
         self._seismic_data_samples_view = SeismicDataSamplesView(viewport=self._viewport,
-                                                                                                display_settings=self._seismic_display_settings,
-                                                                                                parent=self)
+                                                                 display_settings=self._seismic_display_settings,
+                                                                 parent=self)
         self._trace_attribute_graph_view = TraceAttributeGraphView(viewport=self._viewport,
-                                                                                                  display_settings=self._seismic_display_settings,
-                                                                                                  parent=self)
+                                                                   display_settings=self._seismic_display_settings,
+                                                                   parent=self)
 
         # Scrollbar - Navegação pelos traços
         self._horizontal_scrollbar =  QScrollBar(Qt.Orientation.Horizontal)
@@ -397,12 +397,11 @@ class SeismicDataWindow(QMainWindow):
                                          trace_indices=data_block.trace_indices,
                                          header_values=data_block.trace_header_values)
 
-        # self._seismic_data_samples_view.set_data(
-        #     trace_positions=data_block.trace_positions,
-        #     trace_indices=data_block.trace_indices,
-        #     samples=data_block.samples,
-        # )
-        #
+        self._seismic_data_samples_view.set_data(trace_positions=data_block.trace_positions,
+                                                 trace_indices=data_block.trace_indices,
+                                                 samples=data_block.samples,
+                                                 sample_interval_us=self._window_info.sample_interval_us)
+
         self._trace_attribute_graph_view.set_data(trace_positions=data_block.trace_positions,
                                                   trace_indices=data_block.trace_indices,
                                                   graph_header_values=data_block.graph_header_values)

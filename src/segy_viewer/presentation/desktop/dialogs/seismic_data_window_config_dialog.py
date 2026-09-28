@@ -24,8 +24,8 @@ from PySide6.QtWidgets import (QCheckBox, QColorDialog, QComboBox, QDialog, QDia
 
 from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import (AVAILABLE_GRAPH_HEADERS,
                                                                                              AVAILABLE_HEADERS,
-                                                                                             SeismicDisplaySettings,
-                                                                                             TraceDrawingMode)
+                                                                                             TRACEDRAWINGMODES,
+                                                                                             SeismicDisplaySettings)
 class SeismicDataWindowConfigDialog(QDialog):
     """
     Permite editar as configurações da Seismic Data Window.
@@ -97,17 +97,13 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         # Os headers já selecionados aparecem primeiro,
         # preservando a ordem atual de exibição.
-        selected_labels = [
-            label
-            for label in self._settings.header_keys_to_show
-            if label in AVAILABLE_HEADERS
-        ]
+        selected_labels = [label
+                           for label in self._settings.header_keys_to_show
+                         if label in AVAILABLE_HEADERS]
 
-        remaining_labels = [
-                            label
+        remaining_labels = [label
                             for label in AVAILABLE_HEADERS
-                            if label not in selected_labels
-                         ]
+                            if label not in selected_labels]
 
         for label in selected_labels + remaining_labels:
             item = QListWidgetItem(str(AVAILABLE_HEADERS[label]))
@@ -166,8 +162,8 @@ class SeismicDataWindowConfigDialog(QDialog):
         layout = QFormLayout(tab)
 
         self._drawing_mode_combo = QComboBox()
-        self._drawing_mode_combo.addItem("Wiggle", TraceDrawingMode.WIGGLE)
-        self._drawing_mode_combo.addItem("Variable Area", TraceDrawingMode.VARIABLE_AREA)
+        for trc_drw_mode  in TRACEDRAWINGMODES:
+            self._drawing_mode_combo.addItem(trc_drw_mode.value, trc_drw_mode.name)
 
         index = self._drawing_mode_combo.findData(self._settings.trace_drawing_mode)
         if index >= 0:

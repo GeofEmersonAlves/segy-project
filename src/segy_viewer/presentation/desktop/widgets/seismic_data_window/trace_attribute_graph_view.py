@@ -44,9 +44,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         self._mouse_pos = None #Posição do mouse para fazer o Mouse Tracker
         self.setMouseTracking(True)
 
-        # self.viewport.trace_count=800  #Vai para a configuracao
-        self._trace_positions: np.ndarray = np.empty(0, dtype=np.int64)
-        self._trace_indices: np.ndarray = np.empty(0, dtype=np.int64)
         self._graph_header_values: dict[str, np.ndarray] = {}
         self._header_key:str = ""
         self._header_values : np.ndarray = np.empty(0, dtype=np.int64)
@@ -59,6 +56,44 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         self._top_margin: float = 5.0
         self._bottom_margin: float = 5.0
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+
+        #Desenha um retantulo preenchido na area do widget
+        white_color_background = QColor(255, 255, 255)
+        self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
+
+        #Escreve escreve o nome da variavel no lado esquerdo
+        self._draw_vertical_text_up(painter, self._left_margin/3, self.height()-15,self._header_key)
+
+        painter.save()
+        # O clipping restringe os dados à área à direita do eixo Y.
+        painter.setClipRect(QRectF(self.plot_left,
+                                   self._top_margin,
+                                   self.plot_width,
+                                   self.height()  - self._top_margin - self._bottom_margin,
+                                   )
+                            )
+        if self._create_cartesian_coord_system(painter):
+            self._plot_header_values(painter=painter)
+
+        painter.restore()
+        # Desenha o eixo Y
+        self._draw_y_axis(painter)
+        # Desenha as linhas de grade
+        self._draw_y_grid(painter)
+
+        # Escreve no canto inferior esquero da area de plotagem os valores mínimo e máximo dos dados
+        if self._display_settings.show_graph_min_max_values:
+            font = QFont("Arial", 8, QFont.Weight.Bold)  # Vai para a configuracao
+            painter.setFont(font)
+            texto = f"Min: {self._minimum_value:.2f} - Max: {self._maximum_value:.2f}"
+            painter.drawText(self.right_rect, Qt.AlignRight | Qt.AlignBottom, texto)
+
+        if self.display_settings.mouse_tracking_on:
+            self._draw_trackin_lines(painter)
+
 
     def mouseMoveEvent(self, event):
         mouse_pos = event.position().toPoint()
@@ -125,42 +160,6 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         self.viewport.trace_under_mouse_position = None
         self.graphMouseMoved.emit("")
         self.update()
-    
-    def paintEvent(self, event: QPaintEvent) -> None:
-        painter = QPainter(self)
-
-        #Desenha um retantulo preenchido na area do widget
-        white_color_background = QColor(255, 255, 255)
-        self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
-
-        #Escreve escreve o nome da variavel no lado esquerdo
-        self._draw_vertical_text_up(painter, self._left_margin/3, self.height()-15,self._header_key)
-
-        painter.save()
-        # O clipping restringe os dados à área à direita do eixo Y.
-        painter.setClipRect(QRectF(self.plot_left,
-                                   self._top_margin,
-                                   self.plot_width,
-                                   self.height()  - self._top_margin - self._bottom_margin,
-                                   )
-                            )
-        if self._create_cartesian_coord_system(painter):
-            self._plot_header_values(painter=painter)
-
-        painter.restore()
-
-        self._draw_y_axis(painter)
-        self._draw_y_grid(painter)
-
-        # Escreve no canto inferior esquero da area de plotagem os valores mínimo e máximo dos dados
-        if self._display_settings.show_graph_min_max_values:
-            font = QFont("Arial", 8, QFont.Weight.Bold)  # Vai para a configuracao
-            painter.setFont(font)
-            texto = f"Min: {self._minimum_value:.2f} - Max: {self._maximum_value:.2f}"
-            painter.drawText(self.right_rect, Qt.AlignRight | Qt.AlignBottom, texto)
-
-        if self.display_settings.mouse_tracking_on:
-            self._draw_trackin_lines(painter)
 
 
     def set_data(self, trace_positions: np.ndarray,
@@ -394,6 +393,7 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
         painter.restore()
 
     def _draw_y_axis(self, painter: QPainter) -> None:
+
         if self._minimum_value is None:
             return
 
@@ -414,11 +414,11 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
             return
 
         axis_x = self.plot_left
-        painter.save()
 
         # --------------------------------------------------------------
         # Linha principal do eixo Y
         # --------------------------------------------------------------
+        painter.save()
         axis_pen = QPen(QColor("#202020")) #cinza muito escuro, quase preto
         axis_pen.setWidthF(1.0)
         axis_pen.setCosmetic(True)

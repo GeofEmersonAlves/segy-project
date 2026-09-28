@@ -31,6 +31,8 @@ Histórico:
        25/09/2026 - Inclusão da classe SeismicDisplaySettings que configura a janela e os HSynchronizedSeismicDataWidget
 ===============================================================================
 """
+import numpy as np
+from numpy._typing import NDArray
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QPainter, QColor
 from PySide6.QtWidgets import QWidget
@@ -63,6 +65,9 @@ class HSynchronizedSeismicDataWidget(QWidget):
 
         self._viewport = viewport
         self._display_settings = display_settings
+
+        self._trace_positions: NDArray[np.int64] = np.empty(0, dtype=np.int64)
+        self._trace_indices: NDArray[np.int64] = np.empty(0, dtype=np.int64)
 
         # Margens horizontais comuns à área de visualização.
         # É importante que os widgets sincronizados utilizem os mesmos valores para
