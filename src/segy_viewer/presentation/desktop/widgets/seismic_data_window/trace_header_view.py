@@ -181,7 +181,6 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
 
         trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
 
-
         if self.viewport.selected_trace == trace_index:
             trace_index = None
 

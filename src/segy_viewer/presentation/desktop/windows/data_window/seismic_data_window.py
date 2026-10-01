@@ -299,6 +299,7 @@ class SeismicDataWindow(QMainWindow):
 
         self._trace_attribute_graph_view.mouseTraceSelected.connect(self._update_selected_trace)
         self._trace_header_view.mouseTraceSelected.connect(self._update_selected_trace)
+        self._seismic_data_samples_view.mouseTraceSelected.connect(self._update_selected_trace)
 
         #Actions da Toolbar
         self._data_plot_parameters_action.triggered.connect(self._open_display_settings)

@@ -34,6 +34,9 @@ class TimeTick(NamedTuple):
 class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
     samplesMouseMoved = Signal(str)
 
+    # Signal emitido quando o usuário clicar em um traco
+    mouseTraceSelected = Signal(object)
+
     def __init__(self, viewport: SeismicViewport, display_settings: SeismicDisplaySettings, parent=None):
         super().__init__(viewport=viewport, display_settings=display_settings, parent=parent)
 
@@ -82,6 +85,12 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         self._mouse_pos = mouse_pos
         trace_position = self.x_to_trace_position(mouse_pos.x())
 
+        if trace_position is None:
+            self._mouse_pos = None
+            self.viewport.trace_under_mouse_position = None
+            self.samplesMouseMoved.emit("")
+            return
+
         array_index = self._position_to_array_index.get(trace_position)
 
         if array_index is None or self._data_samples is None:
@@ -123,6 +132,28 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         self.viewport.trace_under_mouse_position = None
         self.samplesMouseMoved.emit("")
         self.update()
+
+    def mousePressEvent(self, event):
+        if event.button() != Qt.MouseButton.LeftButton:
+            super().mousePressEvent(event)
+            return
+
+        screen_point = event.position()  #Pega a posição que foi clicada na tela
+        trace_position = self.x_to_trace_position(screen_point.x()) #Com a coordenada x converte para o numero do traço dentro do viewport
+
+        if trace_position is None:
+            return
+
+        array_index = self._position_to_array_index.get(trace_position)
+        if array_index is None:
+            return
+
+        trace_index = int(self._trace_indices[array_index])  #Numero do traço dentro do arquivo
+        if self.viewport.selected_trace == trace_index:
+            trace_index = None
+
+        self.viewport.selected_trace = trace_index
+        self.mouseTraceSelected.emit(self.viewport.selected_trace_number)
 
 
     def set_data(self, trace_positions: NDArray[np.int64],
@@ -318,6 +349,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         # Configura a caneta (cor vermelha, espessura 1, linha tracejada)
         pen = QPen(QColor("#ff4757"), 1, Qt.DashLine)
         painter.setPen(pen)
+
         if self._mouse_pos is not None:
             # Desenha a linha horizontal (da esquerda até a direita na altura Y do mouse)
 
@@ -327,7 +359,6 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
             painter.drawLine(self._mouse_pos.x(), 0, self._mouse_pos.x(), self.height())
 
         else:
-
             if self.viewport.trace_under_mouse_position is not None:
                 # Desenha a linha vertical (do topo até a base na largura X do mouse)
                 _mouse_pos_x = self.trace_to_x(self.viewport.trace_under_mouse_position)
