@@ -293,8 +293,10 @@ class SeismicDataWindow(QMainWindow):
         self._horizontal_scrollbar.valueChanged.connect(self._on_horizontal_scroll)
 
         #Widgets H Sincronizados
-        self._trace_attribute_graph_view.graphMouseMoved.connect(self._update_status_bar_graph_info)
-        self._trace_header_view.headerMouseMoved.connect(self._update_status_bar_graph_info)
+        self._trace_attribute_graph_view.graphMouseMoved.connect(self._update_status_bar_info)
+        self._trace_header_view.headerMouseMoved.connect(self._update_status_bar_info)
+        self._seismic_data_samples_view.samplesMouseMoved.connect(self._update_status_bar_info)
+
         self._trace_attribute_graph_view.mouseTraceSelected.connect(self._update_selected_trace)
         self._trace_header_view.mouseTraceSelected.connect(self._update_selected_trace)
 
@@ -420,7 +422,7 @@ class SeismicDataWindow(QMainWindow):
     # status Bar
     # ======================================================================
     @Slot(str)
-    def _update_status_bar_graph_info(self, message: str) -> None:
+    def _update_status_bar_info(self, message: str) -> None:
         self._status_bar_trace_info_label.setText(message)
         #atualiza os Widgets pois a o traco sob o mouse mudou
         self._refresh_hsynchronized_widgets()

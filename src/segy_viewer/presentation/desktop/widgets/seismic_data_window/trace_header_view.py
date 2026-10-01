@@ -140,7 +140,6 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
             return
 
         array_index = self._position_to_array_index.get(trace_position       )
-
         if array_index is None:
             self.headerMouseMoved.emit("")
             return
@@ -159,7 +158,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
         if array_index is None:
             return
 
-        trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
+        trace_index = int(self._trace_indices[array_index]) # Numero do traço dentro do arquivo
         texto_saida=" | ".join(header_texts)
         # print(texto_saida)
         self.viewport.trace_under_mouse_position = trace_index
@@ -195,7 +194,6 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
         self.viewport.trace_under_mouse_position = None
         self.headerMouseMoved.emit("")
         self.update()
-
 
 
     def _draw_trackin_lines(self, painter):

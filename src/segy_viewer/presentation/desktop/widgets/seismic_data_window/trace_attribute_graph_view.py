@@ -114,9 +114,9 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         array_index = self._position_to_array_index.get(trace_position)
         if array_index is None:
+            self.graphMouseMoved.emit("")
             return
 
-        trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
         if not 0 <= array_index < len(self._header_values):
             return
 
@@ -127,7 +127,8 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         data_point = inverse_transform.map(mouse_pos)
         _value = data_point.y()
-        mouse_text = f"Trace: {trace_index+1} {self._header_key}: {header_value:.2f} - Value: {_value:.2f}"
+        trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
+        mouse_text = f"Trace: {trace_index + 1} {self._header_key}: {header_value:.2f} - Value: {_value:.2f}"
         #Atualiza o viewport com o traco atual sob o ponteiro do mouse
         self.viewport.trace_under_mouse_position = trace_index
         self.graphMouseMoved.emit(mouse_text)
