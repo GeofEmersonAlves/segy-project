@@ -13,14 +13,15 @@ Descrição:
 Histórico:
        25/09/2026 - Implementação do Dialog
        26/29/2026 - Finalização do layout e funcionalidades
+       01/10/2026 - Inclusão das opções para desenho das amostras sísmicas
 ===============================================================================
 """
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (QCheckBox, QColorDialog, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGroupBox,
                                QHBoxLayout,
                                QLabel, QListWidget, QListWidgetItem, QMessageBox, QPushButton, QSpinBox, QTabWidget,
-                               QVBoxLayout, QWidget, QFrame)
+                               QVBoxLayout, QWidget, QFrame, QDoubleSpinBox)
 
 from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import (AVAILABLE_GRAPH_HEADERS,
                                                                                              AVAILABLE_HEADERS,
@@ -43,28 +44,33 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         self._settings = settings
 
-        # Cópias locais: escolher uma cor não altera settings
-        # antes de OK ou Apply.
+        # Cópias locais: escolher uma cor não altera settings antes de OK ou Apply.
         self._point_color = QColor(settings.graph_point_color)
         self._line_color = QColor(settings.graph_line_color)
+        self._background_color = QColor(settings.background_color)
+        self._wiggle_color = QColor(settings.wiggle_color)
+        self._positive_fill_color=QColor(settings.positive_fill_color)
+        self._negative_fill_color=QColor(settings.negative_fill_color)
+        self._dead_trace_color=QColor(settings.dead_trace_wiggle_color)
 
         self.setWindowTitle("Data Window Settings")
                          #  w, h
-        self.setFixedSize(390, 400)
+        self.setFixedSize(470, 430)
 
         tabs = QTabWidget(self)
-        tabs.addTab(self._create_headers_tab(), "Trace Headers")
         tabs.addTab(self._create_seismic_tab(), "Seismic Plot Parameters")
+        tabs.addTab(self._create_pre_process_tab(), "Pré-Process")
+        tabs.addTab(self._create_headers_tab(), "Trace Headers")
         tabs.addTab(self._create_graph_tab(), "Attribute Graph")
 
         # Configuração geral da janela, fora das abas.
         self._trace_count_spinbox = QSpinBox()
         self._trace_count_spinbox.setRange(1, 10_000)
-        self._trace_count_spinbox.setValue(settings.number_traces_to_show   )
+        self._trace_count_spinbox.setValue(settings.number_traces_to_show)
 
         window_group = QGroupBox("Seismic Display")
         window_layout = QFormLayout(window_group)
-        window_layout.addRow("Max traces in display:",self._trace_count_spinbox)
+        window_layout.addRow("Max Traces in Display:",self._trace_count_spinbox)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok
                                  | QDialogButtonBox.StandardButton.Apply
@@ -82,9 +88,9 @@ class SeismicDataWindowConfigDialog(QDialog):
     # ==============================================================
     # ABA HEADERS
     # ==============================================================
-
     def _create_headers_tab(self) -> QWidget:
         tab = QWidget()
+        self._change_tab_background(tab)
         layout = QVBoxLayout(tab)
 
         self._show_headers_checkbox = QCheckBox("Show Trace Headers")
@@ -128,6 +134,7 @@ class SeismicDataWindowConfigDialog(QDialog):
         layout.addLayout(h_layout)
         return tab
 
+
     def _move_header(self, step: int) -> None:
         current_row = self._headers_list.currentRow()
         target_row = current_row + step
@@ -159,6 +166,7 @@ class SeismicDataWindowConfigDialog(QDialog):
     # ==============================================================
     def _create_seismic_tab(self) -> QWidget:
         tab = QWidget()
+        self._change_tab_background(tab)
         layout = QFormLayout(tab)
 
         self._drawing_mode_combo = QComboBox()
@@ -169,7 +177,153 @@ class SeismicDataWindowConfigDialog(QDialog):
         if index >= 0:
             self._drawing_mode_combo.setCurrentIndex(index)
 
-        layout.addRow("Drawing mode:", self._drawing_mode_combo)
+        layout.addRow("Drawing Mode:", self._drawing_mode_combo)
+
+        self._add_separator(layout)
+
+        bck_label = QLabel("Background Color:")
+        self._background_color_button = QPushButton()
+        self._update_color_button(self._background_color_button, self._background_color)
+        self._background_color_button.clicked.connect(self._choose_background_color)
+        bk_color_h_layout = QHBoxLayout()
+        bk_color_h_layout.addWidget(bck_label)
+        bk_color_h_layout.addWidget(self._background_color_button)
+
+        wiggle_color_label = QLabel("Wiggle Color:")
+        self._wiggle_color_button = QPushButton()
+        self._update_color_button(self._wiggle_color_button, self._wiggle_color)
+        self._wiggle_color_button.clicked.connect(self._choose_wiggle_color)
+        wgl_color_h_layout = QHBoxLayout()
+        wgl_color_h_layout.addWidget(wiggle_color_label, alignment=Qt.AlignmentFlag.AlignRight)
+        wgl_color_h_layout.addWidget(self._wiggle_color_button)
+
+        _color_h_layout = QHBoxLayout()
+        _color_h_layout.addLayout(bk_color_h_layout)
+        _color_h_layout.addLayout(wgl_color_h_layout)
+        layout.addRow(_color_h_layout)
+
+        self._trace_excursion_spinbox = QDoubleSpinBox()
+        self._trace_excursion_spinbox.setRange(0.01, 100)
+        self._trace_excursion_spinbox.setSingleStep(0.05)
+        self._trace_excursion_spinbox.setDecimals(2)
+        self._trace_excursion_spinbox.setValue(self._settings.trace_excursion)
+        trace_excursion_label = QLabel("Trace Excursion:")
+        h_layout1 = QHBoxLayout()
+        h_layout1.addWidget(trace_excursion_label)
+        h_layout1.addWidget(self._trace_excursion_spinbox)
+
+        self._max_clip_excursion_spinbox = QDoubleSpinBox()
+        self._max_clip_excursion_spinbox.setRange(0.01, 100)
+        self._max_clip_excursion_spinbox.setSingleStep(0.05)
+        self._max_clip_excursion_spinbox.setDecimals(2)
+        self._max_clip_excursion_spinbox.setValue(self._settings.max_clip_excursion)
+        max_clip_excursion_label = QLabel("Max. Clip Excursion:")
+        h_layout2 = QHBoxLayout()
+        h_layout2.addWidget(max_clip_excursion_label)
+        h_layout2.addWidget(self._max_clip_excursion_spinbox)
+
+        self._variable_area_bias_spinbox = QSpinBox()
+        self._variable_area_bias_spinbox.setRange(1, 100)
+        self._variable_area_bias_spinbox.setSingleStep(1)
+        self._variable_area_bias_spinbox.setValue(self._settings.variable_area_bias)
+        variable_area_bias_spinbox_label = QLabel("Variable Area Bias:")
+        h_layout3 = QHBoxLayout()
+        h_layout3.addWidget(variable_area_bias_spinbox_label)
+        h_layout3.addWidget(self._variable_area_bias_spinbox)
+
+        trace_excursion_v_layout = QVBoxLayout()
+        trace_excursion_v_layout.addLayout(h_layout1)
+        trace_excursion_v_layout.addLayout(h_layout2)
+        trace_excursion_v_layout.addLayout(h_layout3)
+
+        self._positive_fill_color_button = QPushButton()
+        self._update_color_button(self._positive_fill_color_button, self._positive_fill_color)
+        self._positive_fill_color_button.clicked.connect(self._choose_positive_fill_color)
+
+        self._negative_fill_color_button = QPushButton()
+        self._update_color_button(self._negative_fill_color_button, self._negative_fill_color)
+        self._negative_fill_color_button.clicked.connect(self._choose_negative_fill_color)
+
+        self._fill_negative_va_checkbox = QCheckBox("Fill Negative Variable Area")
+        self._fill_negative_va_checkbox.setChecked(self._settings.fill_negative_va)
+
+        positive_color_label = QLabel("POSITIVE")
+        negative_color_label = QLabel("NEGATIVE")
+
+        # Grupo com título
+        fill_color_group = QGroupBox("Fill Color")
+        fill_color_h_layout = QVBoxLayout(fill_color_group)
+        fill_color_h_layout.addWidget(positive_color_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        fill_color_h_layout.addWidget(self._positive_fill_color_button)
+        fill_color_h_layout.addWidget(negative_color_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        fill_color_h_layout.addWidget(self._negative_fill_color_button)
+        fill_color_h_layout.addWidget(self._fill_negative_va_checkbox)
+
+        wiggle_final_h_layout = QHBoxLayout()
+        wiggle_final_h_layout.addLayout(trace_excursion_v_layout)
+        wiggle_final_h_layout.addWidget(fill_color_group)
+
+        layout.addRow(wiggle_final_h_layout)
+
+        return tab
+
+    # ==============================================================
+    # ABA OPCOES DE PRE PROCESSAMENTO
+    # ==============================================================
+    def _create_pre_process_tab(self) -> QWidget:
+        tab = QWidget()
+        self._change_tab_background(tab)
+        layout = QFormLayout(tab)
+
+        self._reverse_data_polarity_checkbox = QCheckBox("Reverse Data Polarity")
+        self._reverse_data_polarity_checkbox.setChecked(self._settings.reverse_data_polarity)
+        layout.addRow(self._reverse_data_polarity_checkbox)
+
+        self._add_separator(layout)
+
+        self._amplitude_scale_db_spinbox = QSpinBox()
+        self._amplitude_scale_db_spinbox.setRange(-500, 500)
+        self._amplitude_scale_db_spinbox.setSingleStep(1)
+        self._amplitude_scale_db_spinbox.setValue(self._settings.amplitude_scale_db)
+        _amplitude_scale_db_spinbox_label = QLabel("Amplitude Scale DB:")
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(_amplitude_scale_db_spinbox_label)
+        h_layout.addWidget(self._amplitude_scale_db_spinbox)
+        layout.addRow(h_layout)
+
+        self._add_separator(layout)
+
+        # Grupo com título
+        dead_trace_group = QGroupBox("Dead Traces")
+        dead_trace_v_layout = QVBoxLayout(dead_trace_group)
+
+        self._display_dead_traces_checkbox = QCheckBox("Display Dead Traces")
+        self._display_dead_traces_checkbox.setChecked(self._settings.display_dead_traces)
+
+        self._dead_trace_rms_limit_spinbox = QDoubleSpinBox()
+        self._dead_trace_rms_limit_spinbox.setRange(0, 10_000)
+        self._dead_trace_rms_limit_spinbox.setSingleStep(1)
+        self._dead_trace_rms_limit_spinbox.setDecimals(8)
+        self._dead_trace_rms_limit_spinbox.setValue(self._settings.dead_trace_rms_limit)
+        m_dead_trace_rms_limit_label = QLabel("Dead Trace RMS Limit:")
+        h_layout1 = QHBoxLayout()
+        h_layout1.addWidget(m_dead_trace_rms_limit_label)
+        h_layout1.addWidget(self._dead_trace_rms_limit_spinbox)
+
+        self._dead_trace_color_button = QPushButton()
+        self._update_color_button(self._dead_trace_color_button, self._dead_trace_color)
+        self._dead_trace_color_button.clicked.connect(self._choose_dead_trace_color)
+        m_dead_trace_color_label = QLabel("Dead Trace Wiggle Color:")
+        h_layout2 = QHBoxLayout()
+        h_layout2.addWidget(m_dead_trace_color_label)
+        h_layout2.addWidget(self._dead_trace_color_button)
+
+        dead_trace_v_layout.addWidget(self._display_dead_traces_checkbox)
+        dead_trace_v_layout.addLayout(h_layout1)
+        dead_trace_v_layout.addLayout(h_layout2)
+
+        layout.addRow(dead_trace_group)
+
 
         return tab
 
@@ -178,9 +332,10 @@ class SeismicDataWindowConfigDialog(QDialog):
     # ==============================================================
     def _create_graph_tab(self) -> QWidget:
         tab = QWidget()
+        self._change_tab_background(tab)
         layout = QFormLayout(tab)
 
-        self._show_graph_checkbox = QCheckBox("Show graph")
+        self._show_graph_checkbox = QCheckBox("Show Graph")
         self._show_graph_checkbox.setChecked(self._settings.show_attribute_graph)
 
         self._graph_header_combo = QComboBox()
@@ -199,17 +354,17 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         self._add_separator(layout)
 
-        self._keep_yaxis_on_zero_checkbox = QCheckBox("Keep Y axis zero fixed." )
+        self._keep_yaxis_on_zero_checkbox = QCheckBox("Keep Y Axis Zero Fixed." )
         self._keep_yaxis_on_zero_checkbox.setChecked(self._settings.keep_graph_y_axis_on_zero)
         layout.addRow(self._keep_yaxis_on_zero_checkbox)
 
-        self._show_min_max_checkbox = QCheckBox("Show min/max values.")
+        self._show_min_max_checkbox = QCheckBox("Show Min/Max Values.")
         self._show_min_max_checkbox.setChecked(self._settings.show_graph_min_max_values)
         layout.addRow(self._show_min_max_checkbox)
 
         self._add_separator(layout)
 
-        self._show_points_checkbox = QCheckBox("Plot points")
+        self._show_points_checkbox = QCheckBox("Plot Points")
         self._show_points_checkbox.setChecked(self._settings.plot_graph_point)
 
         self._point_color_button = QPushButton()
@@ -217,14 +372,14 @@ class SeismicDataWindowConfigDialog(QDialog):
         self._point_color_button.clicked.connect(self._choose_point_color)
 
         pt_h_layout = QVBoxLayout()
-        pt_label = QLabel("Point color")
+        pt_label = QLabel("Point Color")
         pt_h_layout.addWidget(pt_label, alignment=Qt.AlignmentFlag.AlignCenter)
         pt_h_layout.addWidget(self._point_color_button)
         layout.addRow(self._show_points_checkbox,pt_h_layout)
 
         self._add_separator(layout)
 
-        self._show_lines_checkbox = QCheckBox("Plot lines")
+        self._show_lines_checkbox = QCheckBox("Plot Lines")
         self._show_lines_checkbox.setChecked(self._settings.plot_graph_line)
 
         self._line_color_button = QPushButton()
@@ -233,7 +388,7 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         layout.addRow(self._show_lines_checkbox)
         ln_h_layout = QVBoxLayout()
-        ln_label = QLabel("Line color")
+        ln_label = QLabel("Line Color")
         ln_h_layout.addWidget(ln_label, alignment=Qt.AlignmentFlag.AlignCenter)
         ln_h_layout.addWidget(self._line_color_button)
 
@@ -241,21 +396,33 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         return tab
 
-    @staticmethod
-    def _add_separator(layout: QFormLayout) -> None:
+
+    def _make_line(self)->QFrame:
         line = QFrame()
         line.setFrameShape(QFrame.Shape.HLine)
         line.setFrameShadow(QFrame.Shadow.Sunken)
+        return line
+
+    def _add_separator(self, layout: QFormLayout) -> None:
+        line = self._make_line()
         layout.addRow(line)
 
-    @staticmethod
-    def _update_color_button(button: QPushButton, color: QColor) -> None:
-        background = color.name()
+    def _find_color_name(self, color: QColor)->str:
+        # Lista com ~148 nomes de cores do Qt (em inglês)
+        for name in QColor.colorNames():
+            if QColor(name) == color:
+                return name.upper()
+        return color.name().upper()
+
+
+    def _update_color_button(self, button: QPushButton, color: QColor) -> None:
+        background = self._find_color_name(color)
         foreground = ("white" if color.lightness() < 128 else "black" )
 
         button.setText(background)
         button.setStyleSheet(f"background-color: {background};"
                              f"color: {foreground};")
+
 
     def _choose_point_color(self) -> None:
         color = QColorDialog.getColor(self._point_color, self, "Points color")
@@ -271,6 +438,40 @@ class SeismicDataWindowConfigDialog(QDialog):
         self._line_color = color
         self._update_color_button(self._line_color_button, color)
 
+    def _choose_background_color(self) -> None:
+        color = QColorDialog.getColor(self._background_color, self, "Background color")
+        if not color.isValid():
+            return
+        self._background_color = color
+        self._update_color_button(self._background_color_button, color)
+
+    def _choose_wiggle_color(self) -> None:
+        color = QColorDialog.getColor(self._wiggle_color, self, "Wiggle color")
+        if not color.isValid():
+            return
+        self._wiggle_color = color
+        self._update_color_button(self._wiggle_color_button, color)
+
+    def _choose_positive_fill_color(self)-> None:
+        color = QColorDialog.getColor(self._positive_fill_color, self, "Positive Fill color")
+        if not color.isValid():
+            return
+        self._positive_fill_color = color
+        self._update_color_button(self._positive_fill_color_button, color)
+
+    def _choose_negative_fill_color(self)-> None:
+        color = QColorDialog.getColor(self._negative_fill_color, self, "Negative Fill color")
+        if not color.isValid():
+            return
+        self._negative_fill_color = color
+        self._update_color_button(self._negative_fill_color_button, color)
+
+    def _choose_dead_trace_color(self)-> None:
+        color = QColorDialog.getColor(self._dead_trace_color, self, "Dead Trace color")
+        if not color.isValid():
+            return
+        self._dead_trace_color = color
+        self._update_color_button(self._dead_trace_color_button, color)
 
     # ==============================================================
     # OK / APPLY / CANCEL
@@ -299,6 +500,23 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         # SeismicDataSamplesView.
         settings.trace_drawing_mode = self._drawing_mode_combo.currentData()
+        settings.trace_excursion = self._trace_excursion_spinbox.value()
+        settings.max_clip_excursion=self._max_clip_excursion_spinbox.value()
+        settings.variable_area_bias=self._variable_area_bias_spinbox.value()
+
+        # SeismicDataSamplesView - Draw colors
+        settings.fill_negative_va= self._fill_negative_va_checkbox.isChecked()
+        settings.background_color = QColor(self._background_color)
+        settings.wiggle_color = QColor(self._wiggle_color)
+        settings.positive_fill_color = QColor(self._positive_fill_color)
+        settings.negative_fill_color = QColor(self._negative_fill_color)
+
+        #Pre-Process
+        settings.display_dead_traces = self._display_dead_traces_checkbox.isChecked()
+        settings.dead_trace_rms_limit = self._dead_trace_rms_limit_spinbox.value()
+        settings.dead_trace_wiggle_color = QColor(self._dead_trace_color)
+        settings.reverse_data_polarity = self._reverse_data_polarity_checkbox.isChecked()
+        settings.amplitude_scale_db = self._amplitude_scale_db_spinbox.value()
 
         # TraceAttributeGraphView.
         settings.show_attribute_graph = self._show_graph_checkbox.isChecked()
@@ -310,6 +528,8 @@ class SeismicDataWindowConfigDialog(QDialog):
         settings.plot_graph_line =  self._show_lines_checkbox.isChecked()
         settings.graph_line_color = QColor(self._line_color)
 
+
+
         self.settings_applied.emit(trace_count_changed)
 
         return True
@@ -320,3 +540,9 @@ class SeismicDataWindowConfigDialog(QDialog):
     def _on_ok(self) -> None:
         if self._apply_changes():
             self.accept()
+
+    def _change_tab_background(self, tab):
+        tab.setAutoFillBackground(True)
+        paleta = self.palette()
+        paleta.setColor(QPalette.ColorRole.Window, QColor("#f3f3f3"))
+        tab.setPalette(paleta)

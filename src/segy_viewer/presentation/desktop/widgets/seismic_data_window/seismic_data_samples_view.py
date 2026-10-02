@@ -14,6 +14,8 @@ Histórico:
        27/09/2026 - Início da criação do Widget
        28/09/2026 - Criação dos metodos para desenhar o eixo Y e a grade da area dos dados.
        30/09/2026 - Criação do sistema de coordenadas dos tracos, criacao do metodo mouseMoveEvent
+       01/10/2026 - Inclusão no set_data do calculo do RMS do traço e da lista de traços mortos
+                 traço morto -> rms <= _dead_trace_rms_limit
 ===============================================================================
 """
 import math
@@ -24,7 +26,7 @@ from PySide6.QtGui import QPaintEvent, QPainter, QColor, QPen, QFont
 from PySide6.QtCore import QLineF, QRectF, Qt, Signal
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
-from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import SeismicDisplaySettings
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import SeismicDisplaySettings, TRACEDRAWINGMODES
 
 class TimeTick(NamedTuple):
     time_ms: float
@@ -53,12 +55,15 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         # Mapeia trace_position -> índice nos arrays carregados
         self._position_to_array_index: dict[int, int] = {}
 
+        self._trace_rms: NDArray[np.float64] = np.empty(0, dtype=np.float64)  #Valor do RMS de cada traço na tela
+        self._dead_traces: NDArray[np.bool_] = np.empty(0, dtype=np.bool_) #Mapeia os traços mortos
+
 
     def paintEvent(self, event:QPaintEvent) -> None:
         painter = QPainter(self)
         painter.save()
 
-        _color_background =  QColor(255, 255, 255)
+        _color_background =  self.display_settings.background_color
         # Desenha um retantulo preenchido na area do widget
         self.draw_boxes_xy_axes_fill_color(painter, _color_background)
 
@@ -99,6 +104,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
 
         samples = self._data_samples[:, array_index]
         trace_index = int(self._trace_indices[array_index])  # Numero do traço dentro do arquivo
+        trace_rms = float(self._trace_rms[array_index])
 
         inverse_transform, ok = self._transform.inverted()
         if not ok:
@@ -121,7 +127,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         else:
             sample_text = f"{sample_value:.8g}"
 
-        trace_text = f"Trace: {trace_index+ 1} | Time: {_time:.2f} ms | Sample value: {sample_text}"
+        trace_text = f"Trace: {trace_index+ 1} - RMS: {trace_rms:.8g} | Time: {_time:.2f} ms | Sample value: {sample_text}"
 
         self.viewport.trace_under_mouse_position = trace_index
         self.samplesMouseMoved.emit(trace_text)
@@ -155,7 +161,6 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         self.viewport.selected_trace = trace_index
         self.mouseTraceSelected.emit(self.viewport.selected_trace_number)
 
-
     def set_data(self, trace_positions: NDArray[np.int64],
                  trace_indices: NDArray[np.int64],
                  samples: NDArray[np.float32],
@@ -188,6 +193,12 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         self._samples_count = len(self._data_samples)
         self._sample_interval_us = sample_interval_us
         self._record_length_ms =  (self._samples_count * self._sample_interval_us / 1000)
+
+        self._data_samples = sample_data.copy()
+
+        #Detecção dos traços mortos pelo RMS do traço
+        self._trace_rms = np.sqrt(np.mean(self._data_samples.astype(np.float64) ** 2, axis=0))  #Cálculo do RMS do dos traços
+        self._dead_traces = self._trace_rms <= self.display_settings.dead_trace_rms_limit  #Compara o RMS com o limite estabelecido, resultado uma matriz com Trues se for morto e False se for vivo
 
         self.update()
 
@@ -363,3 +374,37 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
                 # Desenha a linha vertical (do topo até a base na largura X do mouse)
                 _mouse_pos_x = self.trace_to_x(self.viewport.trace_under_mouse_position)
                 painter.drawLine(_mouse_pos_x, 0, _mouse_pos_x, self.height())
+
+def _draw_samples(self, painter: QPainter) -> None:
+
+    if self._data_samples is None or self._data_samples.size == 0:
+        return
+
+    mode = self.display_settings.trace_drawing_mode
+
+    draw_density = mode in (TRACEDRAWINGMODES.VARIABLE_DENSITY,
+                            TRACEDRAWINGMODES.WIGGLE_VARIABLE_DENSITY)
+    draw_area = mode in (TRACEDRAWINGMODES.VARIABLE_AREA,
+                         TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA)
+    draw_wiggle = mode in (TRACEDRAWINGMODES.WIGGLE,
+                           TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA,
+                           TRACEDRAWINGMODES.WIGGLE_VARIABLE_DENSITY)
+
+    if draw_density:
+        self._draw_variable_density(painter)  # Implementaremos depois.
+
+    if not (draw_area or draw_wiggle):
+        return
+
+    first = self.viewport.first_trace_position
+    stop = first + self.viewport.trace_count
+
+    for trace_position in range(first, stop):
+        array_index = self._position_to_array_index.get(trace_position)
+        if array_index is None:
+            continue
+
+        self._draw_trace(painter, trace_position,
+                                  self._data_samples[:, array_index],
+                                  draw_area=draw_area,
+                                  draw_wiggle=draw_wiggle)
