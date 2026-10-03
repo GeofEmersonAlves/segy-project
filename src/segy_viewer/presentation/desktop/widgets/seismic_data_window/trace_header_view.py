@@ -120,7 +120,7 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
                                         }
         # print(self._header_values)
         self._update_view_height()
-        self.update()
+
 
     @property
     def displayed_headers(self) -> dict[str, str]:

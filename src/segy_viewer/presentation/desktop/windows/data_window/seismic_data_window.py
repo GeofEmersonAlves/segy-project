@@ -449,15 +449,23 @@ class SeismicDataWindow(QMainWindow):
     # ======================================================================
     @Slot(int)
     def _on_horizontal_scroll(self, first_trace: int) -> None:
-        """
-        Atualiza a posição horizontal do viewport, first_trace representa uma posição no espaço de visualização.
-        Atualmente:
-            posição visual == índice físico.
-        """
         if first_trace == self._viewport.first_trace_position:
             return
 
         self._viewport.first_trace_position = first_trace
+        last_trace = first_trace + self._viewport.trace_count - 1
+
+        if self._data_block is not None:
+            positions = self._data_block.trace_positions
+
+            if (
+                positions
+                and positions[0] <= first_trace
+                and last_trace <= positions[-1]
+            ):
+                self._refresh_hsynchronized_widgets()
+                return
+
         self._request_current_data()
 
     # ======================================================================
@@ -482,6 +490,8 @@ class SeismicDataWindow(QMainWindow):
         self._seismic_data_samples_view.recalculate_amplitude_scale(force=True)
 
     def _on_display_settings_applied(self, trace_count_changed: bool) -> None:
+        self._seismic_data_samples_view.invalidate_plot()
+
         any_change=False
         if trace_count_changed:
             self._viewport.trace_count = self._seismic_display_settings.number_traces_to_show

@@ -96,8 +96,7 @@ class SeismicDataSession:
         # --------------------------------------------------------------
         first_position, last_position = (self._trace_buffer.calculate_range(first_trace_position=(viewport.first_trace_position),
                                                                             trace_count=viewport.trace_count,
-                                                                            total_trace_count=(self._window_info.trace_count),
-                                                                            )
+                                                                            total_trace_count=(self._window_info.trace_count))
                                         )
         # --------------------------------------------------------------
         # Posições no espaço de visualização.

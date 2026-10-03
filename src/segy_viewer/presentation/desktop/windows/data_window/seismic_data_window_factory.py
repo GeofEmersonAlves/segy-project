@@ -33,7 +33,7 @@ class SeismicDataWindowFactory:
         # --------------------------------------------------------------
         # Application
         # --------------------------------------------------------------
-        trace_buffer = TraceBuffer(buffer_ratio=0.10)
+        trace_buffer = TraceBuffer(buffer_ratio=0.30)
         trace_order_index = TraceOrderIndex()
         header_dictionary = SegyViewerHeaderDictionary()
         session = SeismicDataSession(data_source=data_source,

@@ -232,7 +232,7 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
                                       for values in finite_arrays
                                      )
 
-        self.update()
+
 
     @staticmethod
     def _calculate_nice_interval(value: float) -> float:

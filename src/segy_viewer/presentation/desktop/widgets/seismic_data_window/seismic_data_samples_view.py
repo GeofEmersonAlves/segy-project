@@ -16,13 +16,15 @@ Histórico:
        30/09/2026 - Criação do sistema de coordenadas dos tracos, criacao do metodo mouseMoveEvent
        01/10/2026 - Inclusão no set_data do calculo do RMS do traço e da lista de traços mortos
                  traço morto -> rms <= _dead_trace_rms_limit
+       02/10/2026 - Finalização do _draw_trace
+       03/10/2026 - Alterações para melhorar a performance apos o desenho das amostras
 ===============================================================================
 """
 import math
 import numpy as np
 from numpy._typing import NDArray
 from typing import NamedTuple
-from PySide6.QtGui import QPaintEvent, QPainter, QColor, QPen, QFont, QPainterPath
+from PySide6.QtGui import QPaintEvent, QPainter, QColor, QPen, QFont, QPainterPath, QPixmap
 from PySide6.QtCore import QLineF, QRectF, Qt, Signal
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
@@ -60,33 +62,37 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         self._trace_rms: NDArray[np.float64] = np.empty(0, dtype=np.float64)  #Valor do RMS de cada traço na tela
         self._dead_traces: NDArray[np.bool_] = np.empty(0, dtype=np.bool_) #Mapeia os traços mortos
 
+        #Cache de imagem para melhorar a performance
+        self._plot_cache: QPixmap | None = None
+        self._plot_cache_key = None
+
 
     def paintEvent(self, event:QPaintEvent) -> None:
+        dpr = self.devicePixelRatioF()
+        cache_key = (self.width(),
+                    self.height(),
+                    dpr,
+                    self.viewport.first_trace_position,
+                    self.viewport.trace_count,
+                    self.viewport.selected_trace,
+                    self._display_settings.show_time_grid)
+
+        if self._plot_cache is None or cache_key != self._plot_cache_key:
+            pixmap = QPixmap(round(self.width() * dpr), round(self.height() * dpr))
+            pixmap.setDevicePixelRatio(dpr)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            cache_painter = QPainter(pixmap)
+
+            try:
+                self._draw_static_plot(cache_painter)
+            finally:
+                cache_painter.end()
+
+            self._plot_cache = pixmap
+            self._plot_cache_key = cache_key
+
         painter = QPainter(self)
-        painter.save()
-
-        _color_background =  self.display_settings.background_color
-        # Desenha um retantulo preenchido na area do widget
-        self.draw_box_data_area_fill_color(painter, _color_background)
-
-        # Desenha um retangulo branco na area do eixo y
-        white_color_background = QColor(255, 255, 255)
-        self.draw_box_y_axis_area_fill_color(painter, white_color_background)
-
-        #Calcula as marcas do eixo de tempo
-        ticks = self._calculate_time_ticks()
-
-        #Desenha o eixo Y do lado esquerdo
-        self._draw_y_axis(painter, ticks)
-
-        #Desenha a grade do lado direito, na area dos dados
-        if self.display_settings.show_time_grid:
-            self._draw_time_grid(painter, ticks)
-
-        if self._create_cartesian_coord_system(painter):
-            self._draw_samples(painter)
-
-        painter.restore()
+        painter.drawPixmap(0, 0, self._plot_cache)
 
         if self.display_settings.mouse_tracking_on:
             self._draw_trackin_lines(painter)
@@ -200,17 +206,46 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         self._sample_interval_us = sample_interval_us
         self._record_length_ms =  (self._samples_count * self._sample_interval_us / 1000)
 
-        self._data_samples = sample_data.copy()
 
         #Detecção dos traços mortos pelo RMS do traço
         self._trace_rms = np.sqrt(np.mean(self._data_samples.astype(np.float64) ** 2, axis=0))  #Cálculo do RMS do dos traços
         self._dead_traces = (self._trace_rms <= self.display_settings.dead_trace_rms_limit)  #Compara o RMS com o limite estabelecido, resultado uma matriz com Trues se for morto e False se for vivo
         self._calculate_amplitude_scale() #Calcula os valores da aba Scale para a escala do desenho do traço
 
-        self.update()
+        self._plot_cache = None
+
 
     def recalculate_amplitude_scale(self, force: bool = False) -> None:
         self._calculate_amplitude_scale(force=force)
+
+    def invalidate_plot(self) -> None:
+        self._plot_cache = None
+        self.update()
+
+    def _draw_static_plot(self, painter: QPainter) -> None:
+        self.draw_box_data_area_fill_color(painter, self.display_settings.background_color)
+
+        # Desenha um retangulo branco na area do eixo y
+        white_color_background = QColor(255, 255, 255)
+        self.draw_box_y_axis_area_fill_color(painter, white_color_background)
+
+        # Calcula as marcas do eixo de tempo
+        ticks = self._calculate_time_ticks()
+
+        # Desenha o eixo Y do lado esquerdo
+        self._draw_y_axis(painter, ticks)
+
+        # Desenha a grade do lado direito, na area dos dados
+        if self.display_settings.show_time_grid:
+            self._draw_time_grid(painter, ticks)
+
+        painter.save()
+        try:
+            if self._create_cartesian_coord_system(painter):
+                self._draw_samples(painter)
+        finally:
+            painter.restore()
+
 
     def _calculate_time_ticks(self) -> list[TimeTick]:
         """Calcula as marcas do eixo de tempo nas coordenadas do widget."""
@@ -586,5 +621,88 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         painter.drawPath(path)
         painter.restore()
 
-    def _draw_variable_area(self, painter, plot_samples):
-        pass
+    def _draw_variable_area(self, painter: QPainter, plot_samples: NDArray[np.float64]) -> None:
+        if plot_samples.size == 0 or self._sample_interval_us <= 0:
+            return
+
+        settings = self.display_settings
+        bias = max(0.0, min(100.0, float(settings.variable_area_bias)))
+
+        if bias == 0.0:
+            return
+
+        # As amplitudes já estão normalizadas por _configure_trace_coordinates().
+        # 100%: referência no centro (x = 0).
+        # Valores menores: preenche apenas a parte mais externa dos picos.
+        threshold = 1.0 - bias / 100.0
+        sample_interval_ms = self._sample_interval_us / 1000.0
+        finite = np.isfinite(plot_samples)
+
+        def draw_side(baseline: float, positive: bool, color: QColor) -> None:
+            active = finite & (
+                (plot_samples > baseline) if positive
+                else (plot_samples < baseline)
+            )
+
+            if not np.any(active):
+                return
+
+            # Encontra o início e o fim de cada trecho contínuo a preencher.
+            changes = np.diff(
+                np.concatenate(([False], active, [False])).astype(np.int8)
+            )
+            starts = np.flatnonzero(changes == 1)
+            ends = np.flatnonzero(changes == -1) - 1
+
+            path = QPainterPath()
+
+            for start, end in zip(starts, ends):
+                start_y = start * sample_interval_ms
+
+                # Interpola onde o traço cruzou a linha de referência.
+                if start > 0 and finite[start - 1]:
+                    previous = float(plot_samples[start - 1])
+                    current = float(plot_samples[start])
+                    fraction = (baseline - previous) / (current - previous)
+                    start_y = (start - 1 + fraction) * sample_interval_ms
+
+                path.moveTo(baseline, start_y)
+
+                for index in range(start, end + 1):
+                    path.lineTo(
+                        float(plot_samples[index]),
+                        index * sample_interval_ms,
+                    )
+
+                end_y = end * sample_interval_ms
+
+                if end + 1 < plot_samples.size and finite[end + 1]:
+                    current = float(plot_samples[end])
+                    following = float(plot_samples[end + 1])
+                    fraction = (baseline - current) / (following - current)
+                    end_y = (end + fraction) * sample_interval_ms
+
+                path.lineTo(baseline, end_y)
+                path.closeSubpath()
+
+            painter.setBrush(QColor(color))
+            painter.drawPath(path)
+
+        painter.save()
+        try:
+            painter.setPen(Qt.PenStyle.NoPen)
+
+            draw_side(
+                baseline=threshold,
+                positive=True,
+                color=settings.positive_fill_color,
+            )
+
+            if settings.fill_negative_va:
+                draw_side(
+                    baseline=-threshold,
+                    positive=False,
+                    color=settings.negative_fill_color,
+                )
+        finally:
+            painter.restore()

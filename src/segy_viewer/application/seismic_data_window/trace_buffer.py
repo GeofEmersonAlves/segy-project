@@ -24,7 +24,7 @@ Histórico:
 """
 
 class TraceBuffer:
-    def __init__(self, buffer_ratio: float = 0.10) -> None:
+    def __init__(self, buffer_ratio: float = 0.20) -> None:
         if buffer_ratio < 0:
             raise ValueError("buffer_ratio must be greater than or equal to zero.")
         self._buffer_ratio = buffer_ratio

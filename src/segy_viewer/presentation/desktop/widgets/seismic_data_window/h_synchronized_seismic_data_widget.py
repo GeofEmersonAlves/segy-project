@@ -72,8 +72,8 @@ class HSynchronizedSeismicDataWidget(QWidget):
         # Margens horizontais comuns à área de visualização.
         # É importante que os widgets sincronizados utilizem os mesmos valores para
         # garantir que permaneçam horizontalmente alinhados.
-        self._left_margin: float = 55.0
-        self._right_margin: float = 5.0
+        self._left_margin: float = 57.0
+        self._right_margin: float = 2.0
 
 
     # ======================================================================
