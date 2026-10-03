@@ -57,7 +57,11 @@ class TraceHeaderView(HSynchronizedSeismicDataWidget):
 
         white_color_background = QColor(255, 255, 255)
         # Desenha um retantulo preenchido na area do widget
-        self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
+        self.draw_box_data_area_fill_color(painter, white_color_background)
+
+        # Desenha um retangulo branco na area do eixo y
+        white_color_background = QColor(255, 255, 255)
+        self.draw_box_y_axis_area_fill_color(painter, white_color_background)
 
         self._draw_header_labels(painter) #Escreve do lado esquedo o label dos header exibidos
         painter.restore()

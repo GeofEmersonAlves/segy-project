@@ -62,7 +62,11 @@ class TraceAttributeGraphView(HSynchronizedSeismicDataWidget):
 
         #Desenha um retantulo preenchido na area do widget
         white_color_background = QColor(255, 255, 255)
-        self.draw_boxes_xy_axes_fill_color(painter, white_color_background)
+        self.draw_box_data_area_fill_color(painter, white_color_background)
+
+        # Desenha um retangulo branco na area do eixo y
+        white_color_background = QColor(255, 255, 255)
+        self.draw_box_y_axis_area_fill_color(painter, white_color_background)
 
         #Escreve escreve o nome da variavel no lado esquerdo
         self._draw_vertical_text_up(painter, self._left_margin/3, self.height()-15,self._header_key)

@@ -14,7 +14,9 @@ Histórico:
        25/09/2026 - Implementação do Dialog
        26/29/2026 - Finalização do layout e funcionalidades
        01/10/2026 - Inclusão das opções para desenho das amostras sísmicas
-===============================================================================
+       02/10/2026 - Inclusão das propriedades para o calculo das amplitudes dos tracos
+       02/10/2026 - Inclusão da Aba Scale
+==============================================================================
 """
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QPalette
@@ -26,7 +28,8 @@ from PySide6.QtWidgets import (QCheckBox, QColorDialog, QComboBox, QDialog, QDia
 from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import (AVAILABLE_GRAPH_HEADERS,
                                                                                              AVAILABLE_HEADERS,
                                                                                              TRACEDRAWINGMODES,
-                                                                                             SeismicDisplaySettings)
+                                                                                             SeismicDisplaySettings,
+                                                                                             AMPLITUDE_SCALE_CALCULATIONS)
 class SeismicDataWindowConfigDialog(QDialog):
     """
     Permite editar as configurações da Seismic Data Window.
@@ -38,6 +41,7 @@ class SeismicDataWindowConfigDialog(QDialog):
 
     # O bool informa se number_traces_to_show mudou.
     settings_applied = Signal(bool)
+    recalc_scale = Signal()
 
     def __init__(self,  settings: SeismicDisplaySettings,   parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -53,13 +57,14 @@ class SeismicDataWindowConfigDialog(QDialog):
         self._negative_fill_color=QColor(settings.negative_fill_color)
         self._dead_trace_color=QColor(settings.dead_trace_wiggle_color)
 
-        self.setWindowTitle("Data Window Settings")
+        self.setWindowTitle("Seismic Data Window Settings")
                          #  w, h
-        self.setFixedSize(470, 430)
+        self.setFixedSize(500, 430)
 
         tabs = QTabWidget(self)
-        tabs.addTab(self._create_seismic_tab(), "Seismic Plot Parameters")
+        tabs.addTab(self._create_seismic_tab(), "Plot Parameters")
         tabs.addTab(self._create_pre_process_tab(), "Pré-Process")
+        tabs.addTab(self._create_scale_tab(), "Scale")
         tabs.addTab(self._create_headers_tab(), "Trace Headers")
         tabs.addTab(self._create_graph_tab(), "Attribute Graph")
 
@@ -275,24 +280,6 @@ class SeismicDataWindowConfigDialog(QDialog):
         self._change_tab_background(tab)
         layout = QFormLayout(tab)
 
-        self._reverse_data_polarity_checkbox = QCheckBox("Reverse Data Polarity")
-        self._reverse_data_polarity_checkbox.setChecked(self._settings.reverse_data_polarity)
-        layout.addRow(self._reverse_data_polarity_checkbox)
-
-        self._add_separator(layout)
-
-        self._amplitude_scale_db_spinbox = QSpinBox()
-        self._amplitude_scale_db_spinbox.setRange(-500, 500)
-        self._amplitude_scale_db_spinbox.setSingleStep(1)
-        self._amplitude_scale_db_spinbox.setValue(self._settings.amplitude_scale_db)
-        _amplitude_scale_db_spinbox_label = QLabel("Amplitude Scale DB:")
-        h_layout = QHBoxLayout()
-        h_layout.addWidget(_amplitude_scale_db_spinbox_label)
-        h_layout.addWidget(self._amplitude_scale_db_spinbox)
-        layout.addRow(h_layout)
-
-        self._add_separator(layout)
-
         # Grupo com título
         dead_trace_group = QGroupBox("Dead Traces")
         dead_trace_v_layout = QVBoxLayout(dead_trace_group)
@@ -324,8 +311,97 @@ class SeismicDataWindowConfigDialog(QDialog):
 
         layout.addRow(dead_trace_group)
 
+        self._add_separator(layout)
+
+        self._reverse_data_polarity_checkbox = QCheckBox("Reverse Data Polarity")
+        self._reverse_data_polarity_checkbox.setChecked(self._settings.reverse_data_polarity)
+        layout.addRow(self._reverse_data_polarity_checkbox)
+
+        self._add_separator(layout)
+
+        self._amplitude_scale_db_spinbox = QSpinBox()
+        self._amplitude_scale_db_spinbox.setRange(-500, 500)
+        self._amplitude_scale_db_spinbox.setSingleStep(1)
+        self._amplitude_scale_db_spinbox.setValue(self._settings.amplitude_scale_db)
+        _amplitude_scale_db_spinbox_label = QLabel("Amplitude Scale DB:")
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(_amplitude_scale_db_spinbox_label)
+        h_layout.addWidget(self._amplitude_scale_db_spinbox)
+        layout.addRow(h_layout)
 
         return tab
+
+    def _create_scale_tab(self) -> QWidget:
+        tab = QWidget()
+        self._change_tab_background(tab)
+        layout = QVBoxLayout(tab)
+
+        # Método de cálculo.
+        calculation_group = QGroupBox("Scale Calculation")
+        calculation_layout = QFormLayout(calculation_group)
+
+        self._scale_calculation_combo = QComboBox()
+        for calculation, (name, description) in AMPLITUDE_SCALE_CALCULATIONS.items():
+            self._scale_calculation_combo.addItem(name, calculation)
+
+        index = self._scale_calculation_combo.findData(self._settings.amplitude_scale_calculation)
+        if index >= 0:
+            self._scale_calculation_combo.setCurrentIndex(index)
+
+        calculation_layout.addRow("Scale Type Calculation:", self._scale_calculation_combo)
+
+        self._scale_calculation_description = QLabel()
+        self._scale_calculation_description.setWordWrap(True)
+        calculation_layout.addRow("", self._scale_calculation_description)
+
+        self._scale_calculation_combo.currentIndexChanged.connect(self._update_description)
+        self._update_description()
+
+        self._calc_scale_num_traces_spinbox = QSpinBox()
+        self._calc_scale_num_traces_spinbox.setRange(1, self._settings.number_traces_to_show)
+        self._calc_scale_num_traces_spinbox.setValue(self._settings.calc_scale_num_traces)
+        calculation_layout.addRow("Calc. Scale Max. Traces:", self._calc_scale_num_traces_spinbox)
+        layout.addWidget(calculation_group)
+
+        # Valores de amplitude. "Auto" representa None, antes do cálculo inicial.
+        amplitude_group = QGroupBox("Scale Amplitude Settings")
+        amplitude_layout = QFormLayout(amplitude_group)
+
+        auto_value = -1e15
+
+        self._min_amp_spinbox = QDoubleSpinBox()
+        self._min_amp_spinbox.setRange(auto_value, 1e15)
+        self._min_amp_spinbox.setDecimals(12)
+        self._min_amp_spinbox.setSpecialValueText("Auto")
+        self._min_amp_spinbox.setValue(auto_value if self._settings.mim_amp_value is None
+                                                   else self._settings.mim_amp_value)
+        amplitude_layout.addRow("Min. Amplitude:", self._min_amp_spinbox)
+
+        self._max_amp_spinbox = QDoubleSpinBox()
+        self._max_amp_spinbox.setRange(auto_value, 1e15)
+        self._max_amp_spinbox.setDecimals(12)
+        self._max_amp_spinbox.setSpecialValueText("Auto")
+        self._max_amp_spinbox.setValue(auto_value if self._settings.max_amp_value is None
+                                                    else self._settings.max_amp_value)
+        amplitude_layout.addRow("Max. Amplitude:", self._max_amp_spinbox)
+
+        _lbl_text = f"{self._settings.calculated_scale_trace_count} traces were used to calculate the amplitudes."
+        self._calculated_scale_count_label = QLabel(_lbl_text)
+
+        recalc_button = QPushButton("🔄 Recalculate")
+        recalc_button.setFixedWidth(100)
+        recalc_button.clicked.connect(lambda: self._recalc_scale_amplitudes)
+
+        amplitude_layout.addRow(self._calculated_scale_count_label, recalc_button)
+        amplitude_layout.setAlignment(recalc_button, Qt.AlignmentFlag.AlignRight)
+
+        layout.addWidget(amplitude_group)
+        layout.addStretch()
+
+        return tab
+
+    def _recalc_scale_amplitudes(self):
+        self.recalc_scale.emit()
 
     # ==============================================================
     # ABA GRÁFICO
@@ -473,13 +549,20 @@ class SeismicDataWindowConfigDialog(QDialog):
         self._dead_trace_color = color
         self._update_color_button(self._dead_trace_color_button, color)
 
+    def _update_description(self) -> None:
+        calculation = self._scale_calculation_combo.currentData()
+        self._scale_calculation_description.setText(AMPLITUDE_SCALE_CALCULATIONS[calculation][1])
+
     # ==============================================================
     # OK / APPLY / CANCEL
     # ==============================================================
-
     def _validate(self) -> bool:
         if self._show_headers_checkbox.isChecked() and not self._selected_headers():
             QMessageBox.warning(self,  "Trace Headers", "Select at least one Trace Header to display.")
+            return False
+
+        if self._calc_scale_num_traces_spinbox.value() > self._trace_count_spinbox.value() :
+            QMessageBox.warning( self,"Scale Calculation Error", "Calc. Scale Max. Traces cannot exceed Max Traces in Display.")
             return False
 
         return True
@@ -518,6 +601,15 @@ class SeismicDataWindowConfigDialog(QDialog):
         settings.reverse_data_polarity = self._reverse_data_polarity_checkbox.isChecked()
         settings.amplitude_scale_db = self._amplitude_scale_db_spinbox.value()
 
+        #Scale
+        settings.amplitude_scale_calculation = self._scale_calculation_combo.currentData()
+        settings.calc_scale_num_traces = self._calc_scale_num_traces_spinbox.value()
+        settings.mim_amp_value = None if self._min_amp_spinbox.value() == self._min_amp_spinbox.minimum() \
+                                        else self._min_amp_spinbox.value()
+
+        settings.max_amp_value = None if self._max_amp_spinbox.value() == self._max_amp_spinbox.minimum() \
+                                        else self._max_amp_spinbox.value()
+
         # TraceAttributeGraphView.
         settings.show_attribute_graph = self._show_graph_checkbox.isChecked()
         settings.graph_header_keys_to_show =  (self._graph_header_combo.currentData(),)
@@ -527,8 +619,6 @@ class SeismicDataWindowConfigDialog(QDialog):
         settings.graph_point_color = QColor(self._point_color)
         settings.plot_graph_line =  self._show_lines_checkbox.isChecked()
         settings.graph_line_color = QColor(self._line_color)
-
-
 
         self.settings_applied.emit(trace_count_changed)
 

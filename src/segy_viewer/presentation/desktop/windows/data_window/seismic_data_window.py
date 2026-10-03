@@ -182,8 +182,8 @@ class SeismicDataWindow(QMainWindow):
         # ------------------------------------------------------------------
         # Main seismic toolbar
         # ------------------------------------------------------------------
-        self._dead_trace_detection_action = QAction(QIcon(str(_DEAD_TRACE_DETECTION_ICON)), "Dead trace auto detection", self,
-                                              toolTip="Dead trace auto detection dialog")
+        self._show_dead_traces_action = QAction(QIcon(str(_DEAD_TRACE_DETECTION_ICON)), "Show Dead traces", self,
+                                                toolTip="Show Dead traces - Auto Detection")
 
         self._processing_tool_action = QAction(QIcon(str(_PROCESSING_TOOL_ICON)), "Processing tools", self,
                                               toolTip="Processing tools dialog")
@@ -198,7 +198,9 @@ class SeismicDataWindow(QMainWindow):
         self._show_traces_graph_action = QAction(QIcon(str(_SHOW_TRACES_GRAPH_ORDER_TOOL_ICON)), "Show trace(s) Graph", self,
                                                toolTip="Show trace(s) Graph window")
 
-        self._mouse_tracking_action = QAction(QIcon(str(_MOUSE_TRACKING_ON_TOOL_ICON)), "Mouse tracking ON/OFF", self,
+        _mouse_tracking_first_icon = _MOUSE_TRACKING_OFF_TOOL_ICON if self._seismic_display_settings.display_dead_traces else _MOUSE_TRACKING_ON_TOOL_ICON
+
+        self._mouse_tracking_action = QAction(QIcon(str(_mouse_tracking_first_icon)), "Mouse tracking ON/OFF", self,
                                                  toolTip="Mouse tracking ON/OFF")
 
         self._mouse_tracking_action.setCheckable(True)
@@ -220,7 +222,7 @@ class SeismicDataWindow(QMainWindow):
         self._main_seismic_tool_bar.setStyleSheet(self._app_config.SEISMIC_DATA_WINDOW_TOOL_BAR_STYLE)
         self._main_seismic_tool_bar.setIconSize(QSize(25, 25))
 
-        self._main_seismic_tool_bar.addAction(self._dead_trace_detection_action)
+        self._main_seismic_tool_bar.addAction(self._show_dead_traces_action)
         self._main_seismic_tool_bar.addAction(self._processing_tool_action)
         self._main_seismic_tool_bar.addSeparator()
         self._main_seismic_tool_bar.addAction(self._data_plot_parameters_action)

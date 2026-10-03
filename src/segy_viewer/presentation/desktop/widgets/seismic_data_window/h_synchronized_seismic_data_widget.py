@@ -292,13 +292,14 @@ class HSynchronizedSeismicDataWidget(QWidget):
 
         self.update()
 
-    def draw_boxes_xy_axes_fill_color(self, painter: QPainter, color_background: QColor) -> None:
-        # Desenha um retantulo ao lado esquero, area para plotagem do eixo Y
-        self.left_rect = QRectF(0.5, 0.5, self._left_margin - 0.5, self.height() - 1)
-        painter.fillRect(self.left_rect, color_background)
-        painter.drawRect(self.left_rect)
-
+    def draw_box_data_area_fill_color(self, painter: QPainter, color_background: QColor) -> None:
         # Desenha um retangulo do lado direito, área para plotagem dos dados
         self.right_rect = QRectF(self._left_margin, 0.5, self.plot_width, self.height() - 1)
         painter.fillRect(self.right_rect, color_background)
         painter.drawRect(self.right_rect)
+
+    def draw_box_y_axis_area_fill_color(self, painter: QPainter, color_background: QColor) -> None:
+        # Desenha um retantulo ao lado esquero, area para plotagem do eixo Y
+        self.left_rect = QRectF(0.5, 0.5, self._left_margin - 0.5, self.height() - 1)
+        painter.fillRect(self.left_rect, color_background)
+        painter.drawRect(self.left_rect)

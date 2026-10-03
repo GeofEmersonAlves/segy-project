@@ -22,11 +22,13 @@ import math
 import numpy as np
 from numpy._typing import NDArray
 from typing import NamedTuple
-from PySide6.QtGui import QPaintEvent, QPainter, QColor, QPen, QFont
+from PySide6.QtGui import QPaintEvent, QPainter, QColor, QPen, QFont, QPainterPath
 from PySide6.QtCore import QLineF, QRectF, Qt, Signal
 from segy_viewer.application.seismic_data_window import SeismicViewport
 from segy_viewer.presentation.desktop.widgets.seismic_data_window import HSynchronizedSeismicDataWidget
-from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import SeismicDisplaySettings, TRACEDRAWINGMODES
+from segy_viewer.presentation.desktop.windows.data_window.seismic_data_window_config import (SeismicDisplaySettings,
+                                                                                             TRACEDRAWINGMODES,
+                                                                                             AmplitudeScaleCalculation)
 
 class TimeTick(NamedTuple):
     time_ms: float
@@ -65,7 +67,11 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
 
         _color_background =  self.display_settings.background_color
         # Desenha um retantulo preenchido na area do widget
-        self.draw_boxes_xy_axes_fill_color(painter, _color_background)
+        self.draw_box_data_area_fill_color(painter, _color_background)
+
+        # Desenha um retangulo branco na area do eixo y
+        white_color_background = QColor(255, 255, 255)
+        self.draw_box_y_axis_area_fill_color(painter, white_color_background)
 
         #Calcula as marcas do eixo de tempo
         ticks = self._calculate_time_ticks()
@@ -74,11 +80,11 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         self._draw_y_axis(painter, ticks)
 
         #Desenha a grade do lado direito, na area dos dados
-        self._draw_time_grid(painter, ticks)
+        if self.display_settings.show_time_grid:
+            self._draw_time_grid(painter, ticks)
 
         if self._create_cartesian_coord_system(painter):
-            pass
-            # self._draw_samples(painter)
+            self._draw_samples(painter)
 
         painter.restore()
 
@@ -198,10 +204,10 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
 
         #Detecção dos traços mortos pelo RMS do traço
         self._trace_rms = np.sqrt(np.mean(self._data_samples.astype(np.float64) ** 2, axis=0))  #Cálculo do RMS do dos traços
-        self._dead_traces = self._trace_rms <= self.display_settings.dead_trace_rms_limit  #Compara o RMS com o limite estabelecido, resultado uma matriz com Trues se for morto e False se for vivo
+        self._dead_traces = (self._trace_rms <= self.display_settings.dead_trace_rms_limit)  #Compara o RMS com o limite estabelecido, resultado uma matriz com Trues se for morto e False se for vivo
+        self._calculate_amplitude_scale() #Calcula os valores da aba Scale para a escala do desenho do traço
 
         self.update()
-
 
     def _calculate_time_ticks(self) -> list[TimeTick]:
         """Calcula as marcas do eixo de tempo nas coordenadas do widget."""
@@ -322,9 +328,11 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
 
         minor_pen = QPen(QColor(0, 0, 0))
         minor_pen.setWidthF(1)
+        minor_pen.setColor(self.display_settings.time_grid_color)
 
         major_pen = QPen(QColor(0, 0, 0))
         major_pen.setWidthF(2)
+        major_pen.setColor(self.display_settings.time_grid_color)
 
         x_start = self.right_rect.left()
         x_end = self.right_rect.right()
@@ -375,36 +383,191 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
                 _mouse_pos_x = self.trace_to_x(self.viewport.trace_under_mouse_position)
                 painter.drawLine(_mouse_pos_x, 0, _mouse_pos_x, self.height())
 
-def _draw_samples(self, painter: QPainter) -> None:
 
-    if self._data_samples is None or self._data_samples.size == 0:
-        return
+    def _draw_samples(self, painter: QPainter) -> None:
+        if self._data_samples is None or self._data_samples.size == 0:
+            return
 
-    mode = self.display_settings.trace_drawing_mode
+        settings = self.display_settings
+        mode = settings.trace_drawing_mode
 
-    draw_density = mode in (TRACEDRAWINGMODES.VARIABLE_DENSITY,
-                            TRACEDRAWINGMODES.WIGGLE_VARIABLE_DENSITY)
-    draw_area = mode in (TRACEDRAWINGMODES.VARIABLE_AREA,
-                         TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA)
-    draw_wiggle = mode in (TRACEDRAWINGMODES.WIGGLE,
-                           TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA,
-                           TRACEDRAWINGMODES.WIGGLE_VARIABLE_DENSITY)
+        draw_density = mode in (TRACEDRAWINGMODES.VARIABLE_DENSITY.name, TRACEDRAWINGMODES.WIGGLE_VARIABLE_DENSITY.name)
+        draw_area = mode in (TRACEDRAWINGMODES.VARIABLE_AREA.name, TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA.name)
+        draw_wiggle = mode in (TRACEDRAWINGMODES.WIGGLE.name, TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA.name, TRACEDRAWINGMODES.WIGGLE_VARIABLE_DENSITY.name)
 
-    if draw_density:
-        self._draw_variable_density(painter)  # Implementaremos depois.
+        # A imagem de densidade será desenhada primeiro.
+        if draw_density:
+            # self._draw_variable_density(painter)
+            pass
 
-    if not (draw_area or draw_wiggle):
-        return
+        if not (draw_area or draw_wiggle):
+            return
 
-    first = self.viewport.first_trace_position
-    stop = first + self.viewport.trace_count
+        amplitude_factor = 10.0 ** (settings.amplitude_scale_db / 20.0) #Cálculo do fator de amplitude, ver documentacao
+        if settings.reverse_data_polarity:
+            amplitude_factor = -amplitude_factor
 
-    for trace_position in range(first, stop):
-        array_index = self._position_to_array_index.get(trace_position)
-        if array_index is None:
-            continue
+        first_position = self.viewport.first_trace_position
+        last_position = first_position + self.viewport.trace_count
 
-        self._draw_trace(painter, trace_position,
-                                  self._data_samples[:, array_index],
-                                  draw_area=draw_area,
-                                  draw_wiggle=draw_wiggle)
+        for trace_position in range(first_position, last_position):
+            array_index = self._position_to_array_index.get(trace_position)
+            if array_index is None:
+                continue
+
+            is_dead = self._dead_traces[array_index]
+
+            if is_dead and not settings.display_dead_traces:
+                continue
+
+            samples = self._data_samples[:, array_index]
+
+            if amplitude_factor != 1.0:
+                samples = samples * amplitude_factor
+
+            self._draw_trace(painter,  trace_position, samples, is_dead=is_dead,
+                                                                draw_area=draw_area,
+                                                                draw_wiggle=draw_wiggle)
+
+    def _calculate_amplitude_scale(self, force: bool = False) -> bool:
+        settings = self._display_settings
+        if (not force
+                and settings.mim_amp_value is not None
+                and settings.max_amp_value is not None):
+            return False
+
+        if self._data_samples is None or self._data_samples.size == 0:
+            return False
+
+        # Colunas da matriz = traços do datablock.
+        # Percorre os traços na ordem e usa até o máximo configurado de válidos.
+        valid_traces = (~self._dead_traces & np.all(np.isfinite(self._data_samples), axis=0))
+        indices = np.flatnonzero(valid_traces)[:settings.calc_scale_num_traces]
+
+        if indices.size == 0:
+            return False
+
+        samples = np.asarray( self._data_samples[:, indices], dtype=np.float64)
+
+        match settings.amplitude_scale_calculation:
+            case AmplitudeScaleCalculation.MEAN_ABSOLUTE_AMPLITUDE:
+                reference = 4.0 * float(np.mean(np.abs(samples), dtype=np.float64))
+
+            case AmplitudeScaleCalculation.MEAN_TRACE_PEAK:
+                peaks = np.max(np.abs(samples), axis=0)
+                reference = float(np.mean(peaks, dtype=np.float64))
+            case _:
+                raise ValueError("Unsupported amplitude scale calculation method.")
+
+        if not np.isfinite(reference) or reference <= 0:
+            return False
+
+        if force or settings.mim_amp_value is None:
+            settings.mim_amp_value = -reference
+
+        if force or settings.max_amp_value is None:
+            settings.max_amp_value = reference
+
+        settings.calculated_scale_trace_count = int(indices.size)
+        return True
+
+    def _draw_trace(self, painter, trace_position, samples, is_dead, draw_area, draw_wiggle):
+        painter.save()
+        try:
+            plot_samples = self._configure_trace_coordinates(painter, trace_position, samples)
+            if plot_samples is None:
+                return
+
+            if is_dead:
+                self._draw_wiggle(painter, plot_samples, color=self.display_settings.dead_trace_wiggle_color)
+                return
+
+            if draw_area:
+                self._draw_variable_area(painter, plot_samples)
+
+            if draw_wiggle:
+                self._draw_wiggle(painter,plot_samples,color=self.display_settings.wiggle_color )
+
+        finally:
+            painter.restore()
+
+    def _configure_trace_coordinates(self, painter: QPainter, trace_position: 
+                                           int, samples: NDArray[np.float32]) -> NDArray[np.float64] | None:
+        settings = self._display_settings
+
+        min_amp = settings.mim_amp_value
+        max_amp = settings.max_amp_value
+
+        if (
+                min_amp is None
+                or max_amp is None
+                or not np.isfinite(min_amp)
+                or not np.isfinite(max_amp)
+                or min_amp >= 0
+                or max_amp <= 0
+                or settings.trace_excursion <= 0
+                or settings.max_clip_excursion <= 0
+                or self.viewport.trace_count <= 0
+                or self.right_rect.isEmpty()
+        ):
+            return None
+
+        # Uma unidade horizontal passa a representar a excursão configurada,
+        # medida em espaços entre os centros de traços vizinhos.
+        trace_spacing = self.right_rect.width() / self.viewport.trace_count
+        amplitude_width = trace_spacing * settings.trace_excursion
+
+        # Cada lado usa seu próprio limite de referência. Isso também permite
+        # que o usuário informe limites de amplitudes assimétricos.
+        values = np.asarray(samples, dtype=np.float64)
+        normalized = np.empty_like(values)
+
+        positive = values >= 0
+        normalized[positive] = values[positive] / max_amp
+        normalized[~positive] = values[~positive] / abs(min_amp)
+
+        # A configuração de clip é expressa em espaços entre traços.
+        # Converte esse limite para as unidades horizontais locais.
+        clip_limit = settings.max_clip_excursion / settings.trace_excursion
+        plot_samples = np.clip(normalized, -clip_limit, clip_limit)
+
+        painter.translate(self.trace_to_x(trace_position), 0)
+        painter.scale(amplitude_width, 1.0)
+
+        return plot_samples
+
+    def _draw_wiggle(self, painter: QPainter, plot_samples: NDArray[np.float64], color: QColor) -> None:
+        if plot_samples.size == 0 or self._sample_interval_us <= 0:
+            return
+
+        sample_interval_ms = self._sample_interval_us / 1000.0
+        path = QPainterPath()
+        segment_started = False
+
+        for index, amplitude in enumerate(plot_samples):
+            if not np.isfinite(amplitude):
+                segment_started = False
+                continue
+
+            x = float(amplitude)
+            y = index * sample_interval_ms
+
+            if segment_started:
+                path.lineTo(x, y)
+            else:
+                path.moveTo(x, y)
+                segment_started = True
+
+        pen = QPen(QColor(color))
+        pen.setWidthF(1.0)
+        pen.setCosmetic(True)  # Mantém 1 pixel apesar da escala X e Y do painter.
+
+        painter.save()
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.drawPath(path)
+        painter.restore()
+
+    def _draw_variable_area(self, painter, plot_samples):
+        pass

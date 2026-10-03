@@ -15,11 +15,12 @@ Histórico:
        25/09/2026 - Correcoes
        27/09/2026 - Criação das configurações apara o desenho do traço sísmico
        01/10/2026 - Adicionado opcoes para configuração do desenho sísmico
+       02/10/2026 - Adicionado as configurações para o Scale do traco
+       03/10/2026 - Adicionado algumas configurações adicionais para o Plot Parameters
 ===============================================================================
 """
 from dataclasses import dataclass, field
-
-from enum import Enum
+from enum import Enum, auto
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
@@ -44,24 +45,53 @@ class TRACEDRAWINGMODES(Enum):
     WIGGLE_VARIABLE_DENSITY = "Wiggle/Variable Density"
 
 
+class AmplitudeScaleCalculation(Enum):
+    MEAN_ABSOLUTE_AMPLITUDE = auto()
+    MEAN_TRACE_PEAK = auto()
+
+AMPLITUDE_SCALE_CALCULATIONS = {AmplitudeScaleCalculation.MEAN_ABSOLUTE_AMPLITUDE: (
+                                    "Scaled Mean Amplitude",
+                                    "Four times the mean absolute sample amplitude across valid traces.",
+                                ),
+                                AmplitudeScaleCalculation.MEAN_TRACE_PEAK: (
+                                    "Mean trace peak",
+                                    "Mean of the absolute peak amplitude of each valid trace.",
+                                ),
+                            }
+
 @dataclass
 class SeismicDisplaySettings:
     #Opções Gerais
     number_traces_to_show: int = 600
-    mouse_tracking_on: bool = False
+    mouse_tracking_on: bool = True
 
+    #=== PLOT PARAMETERS ===#
     #Opções para o Desenho das amotras sismicas
     trace_excursion: float = 1   #largura horizontal correspondente à amplitude de referência, medida em espaços entre traços
     max_clip_excursion: float = 3 #limite máximo da largura horizontal do traco, medida em espacos entre tracos
     variable_area_bias:int = 100  #Área preenchida. 100% usa o centro do traço; valores menores reduzem a área preenchida
-    trace_drawing_mode = TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA.name  #Modo de desenho das amostras
+    trace_drawing_mode: TRACEDRAWINGMODES  = TRACEDRAWINGMODES.WIGGLE_VARIABLE_AREA.name  #Modo de desenho das amostras
 
-    #Cores para desenho
+    #Grid
+    show_time_grid:bool = True
+    time_grid_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.black))
+
+    #Cores para desenho das amostras
     background_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.white))
     wiggle_color : QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.black))
+    selected_trace_wiggle_color : QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.darkBlue))
     positive_fill_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.red))
     negative_fill_color: QColor = field(default_factory=lambda: QColor(Qt.GlobalColor.blue))
     fill_negative_va:bool = False
+    # === PLOT PARAMETERS ===#
+
+    #Opções para o Scale no desenho das amostras
+    calc_scale_num_traces:int = 100  #Mesmo valor inicial do number_traces_to_show, assim uso o set_data para o calculo inicial
+    mim_amp_value: float | None = None
+    max_amp_value: float | None = None
+    #-----------------------------------------
+    amplitude_scale_calculation: AmplitudeScaleCalculation = AmplitudeScaleCalculation.MEAN_ABSOLUTE_AMPLITUDE  #Forma de calcular o min/max amp_value
+    calculated_scale_trace_count: int = 0 #Quantidade real que foi utilizada pra calcular o min/max amp_value
 
     #Opções para a aba Pre-Process
     display_dead_traces: bool = True
