@@ -209,6 +209,9 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
 
         self.update()
 
+    def recalculate_amplitude_scale(self, force: bool = False) -> None:
+        self._calculate_amplitude_scale(force=force)
+
     def _calculate_time_ticks(self) -> list[TimeTick]:
         """Calcula as marcas do eixo de tempo nas coordenadas do widget."""
 
@@ -429,6 +432,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
                                                                 draw_area=draw_area,
                                                                 draw_wiggle=draw_wiggle)
 
+
     def _calculate_amplitude_scale(self, force: bool = False) -> bool:
         settings = self._display_settings
         if (not force
@@ -442,7 +446,13 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
         # Colunas da matriz = traços do datablock.
         # Percorre os traços na ordem e usa até o máximo configurado de válidos.
         valid_traces = (~self._dead_traces & np.all(np.isfinite(self._data_samples), axis=0))
-        indices = np.flatnonzero(valid_traces)[:settings.calc_scale_num_traces]
+
+        qtde_traces_to_calculate = settings.calc_scale_num_traces
+        #Se a quantidade para calculo for maior que a quanditade de tracos carregados, uso 20% dos carregados
+        if qtde_traces_to_calculate > settings.number_traces_to_show:
+            qtde_traces_to_calculate = settings.number_traces_to_show * 0.20
+
+        indices = np.flatnonzero(valid_traces)[:qtde_traces_to_calculate]
 
         if indices.size == 0:
             return False
@@ -451,7 +461,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
 
         match settings.amplitude_scale_calculation:
             case AmplitudeScaleCalculation.MEAN_ABSOLUTE_AMPLITUDE:
-                reference = 4.0 * float(np.mean(np.abs(samples), dtype=np.float64))
+                reference = 3.5 * float(np.mean(np.abs(samples), dtype=np.float64))
 
             case AmplitudeScaleCalculation.MEAN_TRACE_PEAK:
                 peaks = np.max(np.abs(samples), axis=0)
@@ -479,14 +489,21 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
                 return
 
             if is_dead:
-                self._draw_wiggle(painter, plot_samples, color=self.display_settings.dead_trace_wiggle_color)
+                self._draw_wiggle(painter, plot_samples, color=self.display_settings.dead_trace_wiggle_color, trace_width = 1.0)
                 return
 
             if draw_area:
                 self._draw_variable_area(painter, plot_samples)
 
             if draw_wiggle:
-                self._draw_wiggle(painter,plot_samples,color=self.display_settings.wiggle_color )
+                if trace_position == self.viewport.selected_trace:
+                    _trace_color = self.display_settings.selected_trace_wiggle_color
+                    _trace_width = 2.0
+                else:
+                    _trace_color = self.display_settings.wiggle_color
+                    _trace_width = 1.0
+
+                self._draw_wiggle(painter, plot_samples, color = _trace_color, trace_width = _trace_width)
 
         finally:
             painter.restore()
@@ -536,7 +553,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
 
         return plot_samples
 
-    def _draw_wiggle(self, painter: QPainter, plot_samples: NDArray[np.float64], color: QColor) -> None:
+    def _draw_wiggle(self, painter: QPainter, plot_samples: NDArray[np.float64], color: QColor, trace_width:float) -> None:
         if plot_samples.size == 0 or self._sample_interval_us <= 0:
             return
 
@@ -559,7 +576,7 @@ class SeismicDataSamplesView(HSynchronizedSeismicDataWidget):
                 segment_started = True
 
         pen = QPen(QColor(color))
-        pen.setWidthF(1.0)
+        pen.setWidthF(trace_width)
         pen.setCosmetic(True)  # Mantém 1 pixel apesar da escala X e Y do painter.
 
         painter.save()

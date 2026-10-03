@@ -475,7 +475,11 @@ class SeismicDataWindow(QMainWindow):
     def _open_display_settings(self) -> None:
         dialog = SeismicDataWindowConfigDialog(self._seismic_display_settings, self )
         dialog.settings_applied.connect(self._on_display_settings_applied )
+        dialog.recalc_scale.connect(self._recalc_scale)
         dialog.exec()
+
+    def _recalc_scale(self) -> None:
+        self._seismic_data_samples_view.recalculate_amplitude_scale(force=True)
 
     def _on_display_settings_applied(self, trace_count_changed: bool) -> None:
         any_change=False

@@ -51,7 +51,7 @@ class AmplitudeScaleCalculation(Enum):
 
 AMPLITUDE_SCALE_CALCULATIONS = {AmplitudeScaleCalculation.MEAN_ABSOLUTE_AMPLITUDE: (
                                     "Scaled Mean Amplitude",
-                                    "Four times the mean absolute sample amplitude across valid traces.",
+                                    "3.5 times the mean absolute sample amplitude across valid traces.",
                                 ),
                                 AmplitudeScaleCalculation.MEAN_TRACE_PEAK: (
                                     "Mean trace peak",
